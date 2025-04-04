@@ -16,4 +16,9 @@ public class Player {
     public double getY() {
         return y;
     }
+
+    public void move(double xMovement, double yMovement) {
+        this.x += xMovement;
+        this.y += yMovement;
+    }
 }

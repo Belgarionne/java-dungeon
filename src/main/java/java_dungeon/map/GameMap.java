@@ -3,7 +3,8 @@ package java_dungeon.map;
 import java.util.Random;
 
 public class GameMap {
-    private String[][] renderMap;
+    // Tilemaps are a 2D array of strings
+    private String[][] map;
 
     private int width, height;
 
@@ -21,17 +22,32 @@ public class GameMap {
         return height;
     }
 
-    public String[][] getRenderMap() {
-        return renderMap;
+    public String[][] getMap() {
+        return map;
+    }
+
+    public String getTile(int x, int y) {
+        return map[y][x];
+    }
+
+    public boolean checkCollisionAt(int x, int y) {
+        // No collision outside the map
+        if (x < 0 || y < 0 || x >= width || y >= height) { return false; }
+
+        String tile = map[y][x];
+
+        return tile.equalsIgnoreCase("Wall")
+            || tile.equalsIgnoreCase("Door")
+            || tile.equalsIgnoreCase("Boss-Door");
     }
 
     private void generateTilemap() {
         // ToDo: Add better dungeon generation
         // 16x14 tiles tilemap (screen size)
-        this.width = 16;
-        this.height = 14;
+        this.width = 24;
+        this.height = 24;
 
-        renderMap = new String[height][width];
+        map = new String[height][width];
         Random rand = new Random();
 
         // Outer wall
@@ -49,12 +65,12 @@ public class GameMap {
                     tile = "Wall";
                 }
 
-                renderMap[y][x] = tile;
+                map[y][x] = tile;
             }
         }
         // Random walls
         for (int i = 0; i < 10; i++) {
-            this.renderMap[rand.nextInt(0, height)][rand.nextInt(0, width)] = "Wall";
+            this.map[rand.nextInt(0, height)][rand.nextInt(0, width)] = "Wall";
         }
     }
 }
