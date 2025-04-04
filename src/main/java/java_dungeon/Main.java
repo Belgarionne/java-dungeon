@@ -1,6 +1,8 @@
 package java_dungeon;
 
 import java_dungeon.map.GameMap;
+import java_dungeon.objects.Player;
+
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -15,19 +17,24 @@ public class Main extends Application {
     // SNES rendering size
     private static final int SCREEN_WIDTH = 256;
     private static final int SCREEN_HEIGHT = 224;
+    private static final double SCREEN_TILE_WIDTH = SCREEN_WIDTH / (double)AssetManager.TILE_SIZE;
+    private static final double SCREEN_TILE_HEIGHT = SCREEN_HEIGHT / (double)AssetManager.TILE_SIZE;
 
     private GameMap map;
+    private Player player;
+
     private AutoScalingCanvas canvas;
     private GraphicsContext ctx;
 
-    private double ppu = 16; // Pixels per unit, 16 pixels per game unit
     private double camX;
     private double camY;
 
     public Main() {
         this.map = new GameMap();
+        this.player = new Player(5, 5);
+
         camX = 0.0;
-        camY = 0.5;
+        camY = 0.0;
     }
 
     @Override
@@ -39,16 +46,18 @@ public class Main extends Application {
         ctx = canvas.getGraphicsContext2D();
         ctx.setImageSmoothing(false);
 
+        AssetManager.initialize();
+
         renderGame();
 
         // Redraw the game if the canvas is resized (window resizing)
-        canvas.scalingProperty().addListener((o, oldScale, newScale) -> renderGame());
+        canvas.scalingProperty().addListener((obs) -> renderGame());
 
         // Basic update loop (Moves the camera 1 unit to the left every second)
         AnimationTimer animator = new AnimationTimer() {
             @Override
             public void handle(long currentTime) {
-                camX -= 1.0/60.0;
+                camX -= 0.5/60.0;
                 renderGame();
             }
         };
@@ -71,46 +80,49 @@ public class Main extends Application {
         double renderScale = canvas.scalingProperty().get();
         ctx.save();
         ctx.scale(renderScale, renderScale);
-        ctx.translate(-camX * ppu, -camY * ppu);
+        ctx.translate(-camX * AssetManager.TILE_SIZE, -camY * AssetManager.TILE_SIZE);
 
-        // Draw the tilemap
-        renderTiles();
+        renderTiles(); // Draw the tilemap
+        renderPlayer(); // Draw the player
 
         ctx.restore();
     }
 
     private void renderTiles() {
-        int[][] renderMap = map.getRenderMap();
-
-        // Assume the map width and height from the first row
-        int w = renderMap[0].length;
-        int h = renderMap.length;
-
-        // Start drawing from the map position
-        ctx.translate(map.getOriginX() * ppu, map.getOriginY() * ppu);
+        String[][] renderMap = map.getRenderMap();
 
         // Only draw the visible tiles of the tilemap
         // Upper left corner of the screen in tile coordinates (bounded by the tilemap)
-        int startX = (int)Math.max(Math.floor(((camX - map.getOriginX()) * ppu) / GameMap.TILE_SIZE), 0);
-        int startY = (int)Math.max(Math.floor(((camY - map.getOriginY()) * ppu) / GameMap.TILE_SIZE), 0);
+        int startX = (int)Math.max(Math.floor(camX), 0);
+        int startY = (int)Math.max(Math.floor(camY), 0);
 
-        // Bottom right corner of the screen in tilemap coordinates (bounded by the tilemap)
-        int endX = (int)Math.min(Math.floor(((camX - map.getOriginX()) * ppu + SCREEN_WIDTH) / GameMap.TILE_SIZE) + 1, w);
-        int endY = (int)Math.min(Math.floor(((camY - map.getOriginY()) * ppu + SCREEN_HEIGHT) / GameMap.TILE_SIZE) + 1, h);
+        // Bottom right corner of the screen in tile coordinates (bounded by the tilemap)
+        int endX = (int)Math.min(Math.ceil(camX + SCREEN_TILE_WIDTH), map.getWidth());
+        int endY = (int)Math.min(Math.ceil(camY + SCREEN_TILE_HEIGHT), map.getHeight());
+
+        AssetManager.AtlasImage tileset = AssetManager.getImages().get("Tileset");
 
         // Draw the tiles
         for (int y = startY; y < endY; y++) {
             for (int x = startX; x < endX; x++) {
+                String tile = renderMap[y][x];
                 ctx.drawImage(
-                    map.getTilesetImage(),
-                    map.getTileset()[renderMap[y][x]].x, map.getTileset()[renderMap[y][x]].y, GameMap.TILE_SIZE, GameMap.TILE_SIZE,
-                    x * GameMap.TILE_SIZE, y * GameMap.TILE_SIZE, GameMap.TILE_SIZE, GameMap.TILE_SIZE
+                    tileset.getImg(),
+                    tileset.getFrame(tile).getMinX(), tileset.getFrame(tile).getMinY(), AssetManager.TILE_SIZE, AssetManager.TILE_SIZE,
+                    x * AssetManager.TILE_SIZE, y * AssetManager.TILE_SIZE, AssetManager.TILE_SIZE, AssetManager.TILE_SIZE
                 );
             }
         }
+    }
 
-        // Reset the map translation
-        ctx.translate(-map.getOriginX() * ppu, map.getOriginY() * ppu);
+    private void renderPlayer() {
+        AssetManager.AtlasImage imageSheet = AssetManager.getImages().get("Tileset");
+        var playerRect = imageSheet.getFrame("Player");
+
+        ctx.drawImage(imageSheet.getImg(),
+            playerRect.getMinX(), playerRect.getMinY(), playerRect.getWidth(), playerRect.getHeight(),
+        player.getX() * AssetManager.TILE_SIZE, player.getY() * AssetManager.TILE_SIZE, playerRect.getWidth(), playerRect.getHeight()
+        );
     }
 
     public static void main(String[] args) {
