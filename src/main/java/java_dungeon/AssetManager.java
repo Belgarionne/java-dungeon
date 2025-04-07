@@ -12,7 +12,7 @@ public class AssetManager {
 
         public AtlasImage(Image img) {
             this.img = img;
-            this.frames = new HashMap<String, Rectangle2D>();
+            this.frames = new HashMap<>();
         }
 
         public Image getImg() {
@@ -29,7 +29,7 @@ public class AssetManager {
     }
     public static int TILE_SIZE = 16;
 
-    private static final HashMap<String, AtlasImage> images = new HashMap<String, AtlasImage>();
+    private static final HashMap<String, AtlasImage> images = new HashMap<>();
 
     public static HashMap<String, AtlasImage> getImages() {
         return images;
@@ -47,7 +47,7 @@ public class AssetManager {
             "Unused-1",
             "Unused-2",
             "Player",
-            "Unused-3",
+            "Enemy",
             "Unused-4"
         };
         int tilesPerRow = (int)(tileset.getImg().getWidth() / TILE_SIZE);

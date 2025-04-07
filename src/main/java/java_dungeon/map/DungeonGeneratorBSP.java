@@ -1,5 +1,7 @@
 package java_dungeon.map;
 
+import java_dungeon.util.Vector2;
+
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -61,7 +63,10 @@ public class DungeonGeneratorBSP implements DungeonGenerator {
     }
 
     @Override
-    public void generate(String[][] map, int width, int height) {
+    public DungeonData generate(int width, int height) {
+        DungeonData data = new DungeonData(width, height);
+        String[][] map = data.getTiles();
+
         // Fill with walls
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -84,6 +89,20 @@ public class DungeonGeneratorBSP implements DungeonGenerator {
         for (Room corridor : corridors) {
             drawRoom(corridor, map);
         }
+
+        // Pick a random player start
+        int startRoomIndex = rand.nextInt(rooms.size());
+        data.setPlayerStart(new Vector2(rooms.get(startRoomIndex).getCenterX(), rooms.get(startRoomIndex).getCenterY()));
+
+        // Add 1 enemy to each room
+        for (int i = 0; i < rooms.size(); i++) {
+            // Don't add an enemy to the starting room
+            if (i != startRoomIndex) {
+                data.getEnemyPoints().add(new Vector2(rooms.get(i).getCenterX(), rooms.get(i).getCenterY()));
+            }
+        }
+
+        return data;
     }
 
     private void splitNode(BSPNode node) {

@@ -1,5 +1,7 @@
 package java_dungeon.map;
 
+import java_dungeon.util.Vector2;
+
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -20,7 +22,10 @@ public class DungeonGeneratorWalk implements DungeonGenerator {
     }
 
     @Override
-    public void generate(String[][] map, int width, int height) {
+    public DungeonData generate(int width, int height) {
+        DungeonData data = new DungeonData(width, height);
+        String[][] map = data.getTiles();
+
         // Fill with walls
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -36,8 +41,8 @@ public class DungeonGeneratorWalk implements DungeonGenerator {
         int placedCellCount = 0; // The number of cells that have been placed
 
         // Start at a random position (avoiding the 1 tile edge)
-        int x = rand.nextInt(1, width);
-        int y = rand.nextInt(1, height);
+        int x = rand.nextInt(1, width - 1);
+        int y = rand.nextInt(1, height - 1);
 
         // Only run for a certain number of attempts (or until a certain percent of the area has been filled)
         // Multiple runs helps vary the walk, instead of it clustering around 1 area
@@ -84,5 +89,18 @@ public class DungeonGeneratorWalk implements DungeonGenerator {
                 y = rand.nextInt(1, height);
             } while (!map[y][x].equalsIgnoreCase("Ground"));
         }
+
+        // Pick a random start location (that is not a wall)
+        int startX = rand.nextInt(1, width - 1);
+        int startY = rand.nextInt(1, height - 1);
+
+        while (!map[startY][startX].equalsIgnoreCase("Ground")) {
+            startX = rand.nextInt(1, width - 1);
+            startY = rand.nextInt(1, height - 1);
+        }
+
+        data.setPlayerStart(new Vector2(startX, startY));
+
+        return data;
     }
 }

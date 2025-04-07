@@ -1,8 +1,12 @@
 package java_dungeon;
 
+import java_dungeon.map.DungeonGenerator;
+import java_dungeon.map.DungeonGeneratorBSP;
 import java_dungeon.map.GameMap;
+import java_dungeon.objects.Enemy;
 import java_dungeon.objects.Player;
 
+import java_dungeon.util.Vector2;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.canvas.GraphicsContext;
@@ -13,6 +17,8 @@ import javafx.stage.Stage;
 
 import java_dungeon.gui.AutoScalingCanvas;
 
+import java.util.ArrayList;
+
 public class Main extends Application {
     // SNES rendering size
     private static final int SCREEN_WIDTH = 256;
@@ -22,20 +28,18 @@ public class Main extends Application {
 
     private GameMap map;
     private Player player;
+    private ArrayList<Enemy> enemies;
 
     private AutoScalingCanvas canvas;
     private GraphicsContext ctx;
 
-    private double camX;
-    private double camY;
+    private Vector2 cameraPos;
 
     public Main() {
         this.map = new GameMap();
-        // Start in the center of the map
-        this.player = new Player(Math.floor(map.getWidth() * 0.5), Math.floor(map.getHeight() * 0.5));
-
-        // Center the camera on the player
-//        centerCamera();
+        this.player = new Player(0, 0);
+        this.cameraPos = new Vector2(0, 0);
+        this.enemies = new ArrayList<>();
     }
 
     @Override
@@ -48,7 +52,7 @@ public class Main extends Application {
         ctx.setImageSmoothing(false);
 
         AssetManager.initialize();
-
+        generateLevel();
         renderGame();
 
         // Redraw the game if the canvas is resized (window resizing)
@@ -76,21 +80,36 @@ public class Main extends Application {
 
     private void onKeyPressed(KeyEvent event) {
         switch (event.getCode().getName()) {
-            case "Left" -> movePlayer(-1, 0);
-            case "Right" -> movePlayer(1, 0);
-            case "Up" -> movePlayer(0, -1);
-            case "Down" -> movePlayer(0, 1);
+            case "Left" -> movePlayer(new Vector2(-1, 0));
+            case "Right" -> movePlayer(new Vector2(1, 0));
+            case "Up" -> movePlayer(new Vector2(0, -1));
+            case "Down" -> movePlayer(new Vector2(0, 1));
         }
     }
 
-    private void movePlayer(double x, double y) {
+    private void movePlayer(Vector2 move) {
         // Check for collision
         // ToDo: Add more complicated collision casting to catch movement > 1
-        if (!map.checkCollisionAt((int)(player.getX() + x), (int)(player.getY() + y))) {
-            player.move(x, y);
+        if (!map.checkCollisionAt((int)(player.getPosition().getX() + move.getX()), (int)(player.getPosition().getY() + move.getY()))) {
+            player.move(move);
             centerCamera();
             renderGame();
         }
+    }
+
+    private void generateLevel() {
+        DungeonGenerator generator = new DungeonGeneratorBSP(6, 1);
+        DungeonGenerator.DungeonData data = generator.generate(map.getWidth(), map.getHeight());
+
+        player.setPosition(data.getPlayerStart());
+        centerCamera();
+
+        // Add enemies
+        for (Vector2 spawn : data.getEnemyPoints()) {
+            enemies.add(new Enemy(spawn.getX(), spawn.getY()));
+        }
+
+        map.setTiles(data.getTiles());
     }
 
     private void centerCamera() {
@@ -99,8 +118,14 @@ public class Main extends Application {
         double extraSpacingY = Math.max(SCREEN_TILE_HEIGHT - map.getHeight(), 0.0) * 0.5;
 
         // Center the camera on the player, bounded by the map
-        camX = Math.clamp(player.getX() - SCREEN_TILE_WIDTH * 0.5 + 0.5, -extraSpacingX, map.getWidth() - SCREEN_TILE_WIDTH + extraSpacingX);
-        camY = Math.clamp(player.getY() - SCREEN_TILE_HEIGHT * 0.5 + 0.5, -extraSpacingY, map.getHeight() - SCREEN_TILE_HEIGHT + extraSpacingY);
+        cameraPos.setX(Math.clamp(
+            player.getPosition().getX() - SCREEN_TILE_WIDTH * 0.5 + 0.5,
+            -extraSpacingX, map.getWidth() - SCREEN_TILE_WIDTH + extraSpacingX
+        ));
+        cameraPos.setY(Math.clamp(
+            player.getPosition().getY() - SCREEN_TILE_HEIGHT * 0.5 + 0.5,
+            -extraSpacingY, map.getHeight() - SCREEN_TILE_HEIGHT + extraSpacingY
+        ));
     }
 
     private void renderGame() {
@@ -109,12 +134,13 @@ public class Main extends Application {
         ctx.fillRect(0, 0, canvas.getCanvas().getWidth(), canvas.getCanvas().getHeight());
 
         // Apply camera transformations (including render scaling)
-        double renderScale = canvas.scalingProperty().get() * 0.2;
+        double renderScale = canvas.scalingProperty().get();
         ctx.save();
         ctx.scale(renderScale, renderScale);
-        ctx.translate(-camX * AssetManager.TILE_SIZE, -camY * AssetManager.TILE_SIZE);
+        ctx.translate(-cameraPos.getX() * AssetManager.TILE_SIZE, -cameraPos.getY() * AssetManager.TILE_SIZE);
 
         renderTiles(); // Draw the tilemap
+        renderEnemies(); // Draw the enemies
         renderPlayer(); // Draw the player
 
         ctx.restore();
@@ -128,16 +154,16 @@ public class Main extends Application {
     private void renderTiles() {
         // Only draw the visible tiles of the tilemap
         // Upper left corner of the screen in tile coordinates (bounded by the tilemap)
-//        int startX = (int)Math.max(Math.floor(camX), 0);
-//        int startY = (int)Math.max(Math.floor(camY), 0);
-        int startX = 0;
-        int startY = 0;
+        int startX = (int)Math.max(Math.floor(cameraPos.getX()), 0);
+        int startY = (int)Math.max(Math.floor(cameraPos.getY()), 0);
+//        int startX = 0;
+//        int startY = 0;
 
         // Bottom right corner of the screen in tile coordinates (bounded by the tilemap)
-//        int endX = (int)Math.min(Math.ceil(camX + SCREEN_TILE_WIDTH), map.getWidth());
-//        int endY = (int)Math.min(Math.ceil(camY + SCREEN_TILE_HEIGHT), map.getHeight());
-        int endX = map.getWidth();
-        int endY = map.getHeight();
+        int endX = (int)Math.min(Math.ceil(cameraPos.getX() + SCREEN_TILE_WIDTH), map.getWidth());
+        int endY = (int)Math.min(Math.ceil(cameraPos.getY() + SCREEN_TILE_HEIGHT), map.getHeight());
+//        int endX = map.getWidth();
+//        int endY = map.getHeight();
 
         AssetManager.AtlasImage tileset = AssetManager.getImages().get("Tileset");
 
@@ -161,8 +187,22 @@ public class Main extends Application {
 
         ctx.drawImage(imageSheet.getImg(),
             playerRect.getMinX(), playerRect.getMinY(), playerRect.getWidth(), playerRect.getHeight(),
-        player.getX() * AssetManager.TILE_SIZE, player.getY() * AssetManager.TILE_SIZE, playerRect.getWidth(), playerRect.getHeight()
+        player.getPosition().getX() * AssetManager.TILE_SIZE, player.getPosition().getY() * AssetManager.TILE_SIZE, playerRect.getWidth(), playerRect.getHeight()
         );
+    }
+
+    private void renderEnemies() {
+        // Enemies are frame of the tileset image for now
+        AssetManager.AtlasImage imageSheet = AssetManager.getImages().get("Tileset");
+
+        var enemyRect = imageSheet.getFrame("Enemy");
+
+        for (Enemy enemy : enemies) {
+            ctx.drawImage(imageSheet.getImg(),
+                enemyRect.getMinX(), enemyRect.getMinY(), enemyRect.getWidth(), enemyRect.getHeight(),
+            enemy.getPosition().getX() * AssetManager.TILE_SIZE, enemy.getPosition().getY() * AssetManager.TILE_SIZE, enemyRect.getWidth(), enemyRect.getHeight()
+            );
+        }
     }
 
     public static void main(String[] args) {

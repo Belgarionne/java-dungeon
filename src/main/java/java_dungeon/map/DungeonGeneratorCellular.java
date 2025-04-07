@@ -1,6 +1,9 @@
 package java_dungeon.map;
 
+import java_dungeon.util.Vector2;
+
 import java.util.Random;
+
 // "Cellular Automata" Dungeon Generator
 // Useful for making cave like dungeons, with smoother, more organic tunnels (not guaranteed to be connected)
 public class DungeonGeneratorCellular implements DungeonGenerator {
@@ -13,9 +16,12 @@ public class DungeonGeneratorCellular implements DungeonGenerator {
     }
 
     @Override
-    public void generate(String[][] map, int width, int height) {
+    public DungeonData generate(int width, int height) {
+        DungeonData data = new DungeonData(width, height);
+
         // Temporary grid used to hold randomly filled room
         String[][] tempGrid = new String[height][width];
+        String[][] map = data.getTiles();
 
 
         // Fill map with random walls and ground
@@ -48,5 +54,18 @@ public class DungeonGeneratorCellular implements DungeonGenerator {
                 map[y][x] = wallNeighbors >= requiredNeighbors ? "Wall" : "Ground";
             }
         }
+
+        // Pick a random start location (that is not a wall)
+        int startX = rand.nextInt(1, width - 1);
+        int startY = rand.nextInt(1, height - 1);
+
+        while (!map[startY][startX].equalsIgnoreCase("Ground")) {
+            startX = rand.nextInt(1, width - 1);
+            startY = rand.nextInt(1, height - 1);
+        }
+
+        data.setPlayerStart(new Vector2(startX, startY));
+
+        return data;
     }
 }
