@@ -31,10 +31,11 @@ public class Main extends Application {
 
     public Main() {
         this.map = new GameMap();
-        this.player = new Player(5, 5);
+        // Start in the center of the map
+        this.player = new Player(Math.floor(map.getWidth() * 0.5), Math.floor(map.getHeight() * 0.5));
 
         // Center the camera on the player
-        centerCamera();
+//        centerCamera();
     }
 
     @Override
@@ -108,7 +109,7 @@ public class Main extends Application {
         ctx.fillRect(0, 0, canvas.getCanvas().getWidth(), canvas.getCanvas().getHeight());
 
         // Apply camera transformations (including render scaling)
-        double renderScale = canvas.scalingProperty().get();
+        double renderScale = canvas.scalingProperty().get() * 0.2;
         ctx.save();
         ctx.scale(renderScale, renderScale);
         ctx.translate(-camX * AssetManager.TILE_SIZE, -camY * AssetManager.TILE_SIZE);
@@ -127,12 +128,16 @@ public class Main extends Application {
     private void renderTiles() {
         // Only draw the visible tiles of the tilemap
         // Upper left corner of the screen in tile coordinates (bounded by the tilemap)
-        int startX = (int)Math.max(Math.floor(camX), 0);
-        int startY = (int)Math.max(Math.floor(camY), 0);
+//        int startX = (int)Math.max(Math.floor(camX), 0);
+//        int startY = (int)Math.max(Math.floor(camY), 0);
+        int startX = 0;
+        int startY = 0;
 
         // Bottom right corner of the screen in tile coordinates (bounded by the tilemap)
-        int endX = (int)Math.min(Math.ceil(camX + SCREEN_TILE_WIDTH), map.getWidth());
-        int endY = (int)Math.min(Math.ceil(camY + SCREEN_TILE_HEIGHT), map.getHeight());
+//        int endX = (int)Math.min(Math.ceil(camX + SCREEN_TILE_WIDTH), map.getWidth());
+//        int endY = (int)Math.min(Math.ceil(camY + SCREEN_TILE_HEIGHT), map.getHeight());
+        int endX = map.getWidth();
+        int endY = map.getHeight();
 
         AssetManager.AtlasImage tileset = AssetManager.getImages().get("Tileset");
 
