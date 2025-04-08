@@ -1,23 +1,23 @@
 package java_dungeon.objects;
 
-import java_dungeon.util.Vector2;
+import javafx.geometry.Point2D;
 
 public class Player {
-    private Vector2 position;
+    private Point2D position;
 
     public Player(double x, double y) {
-        this.position = new Vector2(x, y);
+        this.position = new Point2D(x, y);
     }
 
-    public Vector2 getPosition() {
+    public Point2D getPosition() {
         return position;
     }
 
-    public void setPosition(Vector2 position) {
+    public void setPosition(Point2D position) {
         this.position = position;
     }
 
-    public void move(Vector2 movement) {
-        position.add(movement);
+    public void move(Point2D movement) {
+        position = position.add(movement);
     }
 }

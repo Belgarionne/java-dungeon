@@ -1,6 +1,6 @@
 package java_dungeon.map;
 
-import java_dungeon.util.Vector2;
+import javafx.geometry.Point2D;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -92,13 +92,13 @@ public class DungeonGeneratorBSP implements DungeonGenerator {
 
         // Pick a random player start
         int startRoomIndex = rand.nextInt(rooms.size());
-        data.setPlayerStart(new Vector2(rooms.get(startRoomIndex).getCenterX(), rooms.get(startRoomIndex).getCenterY()));
+        data.setPlayerStart(new Point2D(rooms.get(startRoomIndex).getCenterX(), rooms.get(startRoomIndex).getCenterY()));
 
         // Add 1 enemy to each room
         for (int i = 0; i < rooms.size(); i++) {
             // Don't add an enemy to the starting room
             if (i != startRoomIndex) {
-                data.getEnemyPoints().add(new Vector2(rooms.get(i).getCenterX(), rooms.get(i).getCenterY()));
+                data.getEnemyPoints().add(new Point2D(rooms.get(i).getCenterX(), rooms.get(i).getCenterY()));
             }
         }
 

@@ -1,6 +1,6 @@
 package java_dungeon.map;
 
-import java_dungeon.util.Vector2;
+import javafx.geometry.Point2D;
 
 import java.util.ArrayList;
 
@@ -8,37 +8,30 @@ import java.util.ArrayList;
 public interface DungeonGenerator {
     // Data created from dungeon generation
     class DungeonData {
-        private String[][] tiles;
-        private Vector2 playerStart;
-        private ArrayList<Vector2> enemyPoints;
+        private final String[][] tiles;
+        private final ArrayList<Point2D> enemyPoints;
+        private Point2D playerStart;
 
         public DungeonData(int width, int height) {
             this.tiles = new String[height][width];
-            this.playerStart = new Vector2(0, 0);
+            this.playerStart = new Point2D(0, 0);
             this.enemyPoints = new ArrayList<>();
         }
 
         public String[][] getTiles() {
             return tiles;
         }
-        public void setTiles(String[][] tiles) {
-            this.tiles = tiles;
-        }
 
-        public Vector2 getPlayerStart() {
+        public Point2D getPlayerStart() {
             return playerStart;
         }
 
-        public void setPlayerStart(Vector2 playerStart) {
-            this.playerStart = playerStart;
-        }
-
-        public ArrayList<Vector2> getEnemyPoints() {
+        public ArrayList<Point2D> getEnemyPoints() {
             return enemyPoints;
         }
 
-        public void setEnemyPoints(ArrayList<Vector2> enemyPoints) {
-            this.enemyPoints = enemyPoints;
+        public void setPlayerStart(Point2D playerStart) {
+            this.playerStart = playerStart;
         }
     }
 

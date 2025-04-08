@@ -2,7 +2,7 @@ package java_dungeon.map;
 
 public class GameMap {
     // Tilemaps are a 2D array of strings
-    private String[][] tiles;
+    private final String[][] tiles;
 
     private final int width, height;
 
@@ -27,13 +27,21 @@ public class GameMap {
         return height;
     }
 
-    public String[][] getTiles() {
-        return tiles;
-    }
+    public void setTiles(String[][] newTiles) {
+        // Make sure the number of new tiles is >= the size of the current map (can be bigger, because this will just copy a portion of it)
+        if (newTiles.length * newTiles[0].length < height * width) {
+            throw new RuntimeException(String.format(
+                "Failed to set GameMap tiles, cannot set tiles to a smaller array. current size = [%d, %d], new size = [%d, %d]",
+                width, height, newTiles[0].length, newTiles.length
+            ));
+        }
 
-    public void setTiles(String[][] newTilesRef) {
-        // Just update the reference to avoid extra memory copying
-        tiles = newTilesRef;
+        // Deep copy tiles
+        for (int y = 0; y < height; y++) {
+            if (width >= 0) {
+                System.arraycopy(newTiles[y], 0, tiles[y], 0, width);
+            }
+        }
     }
 
     public String getTile(int x, int y) {

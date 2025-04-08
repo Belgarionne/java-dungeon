@@ -1,6 +1,6 @@
 package java_dungeon.map;
 
-import java_dungeon.util.Vector2;
+import javafx.geometry.Point2D;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -99,7 +99,7 @@ public class DungeonGeneratorWalk implements DungeonGenerator {
             startY = rand.nextInt(1, height - 1);
         }
 
-        data.setPlayerStart(new Vector2(startX, startY));
+        data.setPlayerStart(new Point2D(startX, startY));
 
         return data;
     }

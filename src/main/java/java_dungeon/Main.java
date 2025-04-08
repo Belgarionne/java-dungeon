@@ -6,8 +6,8 @@ import java_dungeon.map.GameMap;
 import java_dungeon.objects.Enemy;
 import java_dungeon.objects.Player;
 
-import java_dungeon.util.Vector2;
 import javafx.application.Application;
+import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyEvent;
@@ -26,19 +26,19 @@ public class Main extends Application {
     private static final double SCREEN_TILE_WIDTH = SCREEN_WIDTH / (double)AssetManager.TILE_SIZE;
     private static final double SCREEN_TILE_HEIGHT = SCREEN_HEIGHT / (double)AssetManager.TILE_SIZE;
 
-    private GameMap map;
-    private Player player;
-    private ArrayList<Enemy> enemies;
+    private final GameMap map;
+    private final Player player;
+    private final ArrayList<Enemy> enemies;
 
     private AutoScalingCanvas canvas;
     private GraphicsContext ctx;
 
-    private Vector2 cameraPos;
+    private Point2D cameraPos;
 
     public Main() {
         this.map = new GameMap();
         this.player = new Player(0, 0);
-        this.cameraPos = new Vector2(0, 0);
+        this.cameraPos = new Point2D(0, 0);
         this.enemies = new ArrayList<>();
     }
 
@@ -80,14 +80,14 @@ public class Main extends Application {
 
     private void onKeyPressed(KeyEvent event) {
         switch (event.getCode().getName()) {
-            case "Left" -> movePlayer(new Vector2(-1, 0));
-            case "Right" -> movePlayer(new Vector2(1, 0));
-            case "Up" -> movePlayer(new Vector2(0, -1));
-            case "Down" -> movePlayer(new Vector2(0, 1));
+            case "Left" -> movePlayer(new Point2D(-1, 0));
+            case "Right" -> movePlayer(new Point2D(1, 0));
+            case "Up" -> movePlayer(new Point2D(0, -1));
+            case "Down" -> movePlayer(new Point2D(0, 1));
         }
     }
 
-    private void movePlayer(Vector2 move) {
+    private void movePlayer(Point2D move) {
         // Check for collision
         // ToDo: Add more complicated collision casting to catch movement > 1
         if (!map.checkCollisionAt((int)(player.getPosition().getX() + move.getX()), (int)(player.getPosition().getY() + move.getY()))) {
@@ -105,10 +105,11 @@ public class Main extends Application {
         centerCamera();
 
         // Add enemies
-        for (Vector2 spawn : data.getEnemyPoints()) {
+        for (Point2D spawn : data.getEnemyPoints()) {
             enemies.add(new Enemy(spawn.getX(), spawn.getY()));
         }
 
+        // Set all the tiles
         map.setTiles(data.getTiles());
     }
 
@@ -118,14 +119,16 @@ public class Main extends Application {
         double extraSpacingY = Math.max(SCREEN_TILE_HEIGHT - map.getHeight(), 0.0) * 0.5;
 
         // Center the camera on the player, bounded by the map
-        cameraPos.setX(Math.clamp(
+        double camX = Math.clamp(
             player.getPosition().getX() - SCREEN_TILE_WIDTH * 0.5 + 0.5,
             -extraSpacingX, map.getWidth() - SCREEN_TILE_WIDTH + extraSpacingX
-        ));
-        cameraPos.setY(Math.clamp(
+        );
+        double camY = Math.clamp(
             player.getPosition().getY() - SCREEN_TILE_HEIGHT * 0.5 + 0.5,
             -extraSpacingY, map.getHeight() - SCREEN_TILE_HEIGHT + extraSpacingY
-        ));
+        );
+
+        cameraPos = new Point2D(camX, camY);
     }
 
     private void renderGame() {
