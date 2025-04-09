@@ -1,5 +1,7 @@
 package java_dungeon.map;
 
+import javafx.geometry.Point2D;
+
 public class GameMap {
     // Tilemaps are a 2D array of strings
     private final String[][] tiles;
@@ -57,5 +59,54 @@ public class GameMap {
         return tile.equalsIgnoreCase("Wall")
             || tile.equalsIgnoreCase("Door")
             || tile.equalsIgnoreCase("Boss-Door");
+    }
+
+    public boolean linecast(Point2D a, Point2D b) {
+        // Bresenham’s line algorithm
+        // First convert double point coordinates to tile coordinates (floor to int)
+        int x0 = (int)a.getX();
+        int x1 = (int)b.getX();
+        int y0 = (int)a.getY();
+        int y1 = (int)b.getY();
+
+        int dx = Math.abs(x1 - x0);
+        int dy = Math.abs(y1 - y0);
+        dy = -dy;
+
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+
+        int err = dx + dy;
+
+        // Loops until the line reaches the end point
+        while (true) {
+            if (checkCollisionAt(x0, y0)) {
+                return true; // Line is blocked
+            }
+
+            if (x0 == x1 && y0 == y1) {
+                break; // Reached the end point
+            }
+
+            int e2 = err << 1; // << 1 is equal to *2
+            if (e2 >= dy) {
+                if (x0 == x1) { break; }
+                err += dy;
+                x0 += sx;
+            }
+            if (e2 <= dx) {
+                if (y0 == y1) { break; }
+                err += dx;
+                y0 += sy;
+            }
+        }
+
+        // Didn't hit anything
+        return false;
+    }
+
+    // Checks if 2 points are in the same tile
+    public boolean inSameTile(Point2D a, Point2D b) {
+        return (int)a.getX() == (int)b.getX() && (int)a.getY() == (int)b.getY();
     }
 }

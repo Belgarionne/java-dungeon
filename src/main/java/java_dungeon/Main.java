@@ -87,20 +87,100 @@ public class Main extends Application {
         }
     }
 
+    private void updateGame() {
+        for (Enemy enemy : enemies) {
+            double distToPlayer = enemy.getPosition().distance(player.getPosition());
+
+            // Update the enemy's target if the player is in view
+            if (distToPlayer <= enemy.getSightDistance() && !map.linecast(enemy.getPosition(), player.getPosition())) {
+                enemy.setTargetPoint(player.getPosition());
+            }
+
+            // Only move if the enemy has a target (or remove the target if it was reached)
+            if (enemy.getTargetPoint() == null || map.inSameTile(enemy.getPosition(), enemy.getTargetPoint())) {
+                enemy.setTargetPoint(null);
+                continue;
+            }
+
+            // Get the direction to move towards the target
+            Point2D toTarget = enemy.getTargetPoint().subtract(enemy.getPosition());
+            Point2D moveDirection = getDirectionOnGrid(toTarget);
+
+            // Try to slide around walls
+            if (map.checkCollisionAt((int)(enemy.getPosition().getX() + moveDirection.getX()), (int)(enemy.getPosition().getY() + moveDirection.getY()))) {
+                double dx = Math.signum(toTarget.getX());
+                double dy = Math.signum(toTarget.getY());
+
+                // Move in the opposite axis
+                if (moveDirection.getX() != 0) {
+                    moveDirection = new Point2D(0, dy);
+                }
+                else if (moveDirection.getY() != 0) {
+                    moveDirection = new Point2D(dx, 0);
+                }
+            }
+
+            // Move
+            moveEnemy(enemy, moveDirection);
+        }
+    }
+
     private void movePlayer(Point2D move) {
+        // Get the new position
+        int newX = (int)(player.getPosition().getX() + move.getX());
+        int newY = (int)(player.getPosition().getY() + move.getY());
+        Point2D newPos = new Point2D(newX, newY);
+        boolean stopMovement = false;
+
+        // Check for combat
+        for (Enemy enemy: enemies) {
+            if (map.inSameTile(newPos, enemy.getPosition())) {
+                stopMovement = true; // Stop moving if there is an enemy in the way
+                // ToDo: Add Combat
+            }
+        }
+
         // Check for collision
-        // ToDo: Add more complicated collision casting to catch movement > 1
-        if (!map.checkCollisionAt((int)(player.getPosition().getX() + move.getX()), (int)(player.getPosition().getY() + move.getY()))) {
+        if (!stopMovement && !map.checkCollisionAt(newX, newY)) {
             player.move(move);
             centerCamera();
-            renderGame();
+        }
+
+        updateGame();
+        renderGame();
+    }
+
+    private void moveEnemy(Enemy enemy, Point2D move) {
+        // Get the new position
+        int newX = (int)(enemy.getPosition().getX() + move.getX());
+        int newY = (int)(enemy.getPosition().getY() + move.getY());
+        Point2D newPos = new Point2D(newX, newY);
+
+        // Check for combat
+        if (map.inSameTile(enemy.getPosition(), player.getPosition()) || map.inSameTile(newPos, player.getPosition())) {
+            // ToDo: Add combat
+        }
+        // Check for collision
+        else if (!map.checkCollisionAt(newX, newY)) {
+            enemy.move(move);
+        }
+    }
+
+    private Point2D getDirectionOnGrid(Point2D direction) {
+        if (Math.abs(direction.getX()) >= Math.abs(direction.getY())) {
+            return new Point2D(Math.signum(direction.getX()), 0);
+        }
+        else {
+            return new Point2D(0, Math.signum(direction.getY()));
         }
     }
 
     private void generateLevel() {
+        // Generate the dungeon
         DungeonGenerator generator = new DungeonGeneratorBSP(6, 1);
         DungeonGenerator.DungeonData data = generator.generate(map.getWidth(), map.getHeight());
 
+        // Set player position
         player.setPosition(data.getPlayerStart());
         centerCamera();
 
@@ -109,7 +189,7 @@ public class Main extends Application {
             enemies.add(new Enemy(spawn.getX(), spawn.getY()));
         }
 
-        // Set all the tiles
+        // Set the map tiles
         map.setTiles(data.getTiles());
     }
 
@@ -197,7 +277,6 @@ public class Main extends Application {
     private void renderEnemies() {
         // Enemies are frame of the tileset image for now
         AssetManager.AtlasImage imageSheet = AssetManager.getImages().get("Tileset");
-
         var enemyRect = imageSheet.getFrame("Enemy");
 
         for (Enemy enemy : enemies) {
