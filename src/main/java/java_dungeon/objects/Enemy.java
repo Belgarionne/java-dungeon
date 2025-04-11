@@ -2,22 +2,14 @@ package java_dungeon.objects;
 
 import javafx.geometry.Point2D;
 
-public class Enemy {
-    private Point2D position;
+public class Enemy extends Character implements Drawable {
     private final double sightDistance;
     private Point2D targetPoint;
 
-    public Enemy(double x, double y) {
-        this.position = new Point2D(x, y);
-        this.targetPoint = null;
+    public Enemy(Point2D position) {
+        super(position, 1, 1);
         this.sightDistance = 10.0;
-    }
-
-    public Point2D getPosition() {
-        return position;
-    }
-    public void setPosition(Point2D position) {
-        this.position = position;
+        this.targetPoint = null;
     }
 
     public double getSightDistance() {
@@ -31,7 +23,8 @@ public class Enemy {
         this.targetPoint = targetPoint;
     }
 
-    public void move(Point2D movement) {
-        position = position.add(movement);
+    @Override
+    public String getTileName() {
+        return "Enemy";
     }
 }

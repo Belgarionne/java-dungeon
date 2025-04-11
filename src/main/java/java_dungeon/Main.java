@@ -3,11 +3,13 @@ package java_dungeon;
 import java_dungeon.map.DungeonGenerator;
 import java_dungeon.map.DungeonGeneratorBSP;
 import java_dungeon.map.GameMap;
+import java_dungeon.objects.Character;
 import java_dungeon.objects.Enemy;
 import java_dungeon.objects.Player;
 
 import javafx.application.Application;
 import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyEvent;
@@ -18,6 +20,7 @@ import javafx.stage.Stage;
 import java_dungeon.gui.AutoScalingCanvas;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Main extends Application {
     // SNES rendering size
@@ -37,7 +40,7 @@ public class Main extends Application {
 
     public Main() {
         this.map = new GameMap();
-        this.player = new Player(0, 0);
+        this.player = new Player(new Point2D(0, 0));
         this.cameraPos = new Point2D(0, 0);
         this.enemies = new ArrayList<>();
     }
@@ -51,6 +54,7 @@ public class Main extends Application {
         ctx = canvas.getGraphicsContext2D();
         ctx.setImageSmoothing(false);
 
+        // Set up the game
         AssetManager.initialize();
         generateLevel();
         renderGame();
@@ -88,6 +92,11 @@ public class Main extends Application {
     }
 
     private void updateGame() {
+        // Remove dead enemies
+        List<Enemy> deadEnemies = enemies.stream().filter(Character::isDead).toList();
+        enemies.removeAll(deadEnemies);
+
+        // ToDo: Extract into method for different enemies
         for (Enemy enemy : enemies) {
             double distToPlayer = enemy.getPosition().distance(player.getPosition());
 
@@ -130,13 +139,14 @@ public class Main extends Application {
         int newX = (int)(player.getPosition().getX() + move.getX());
         int newY = (int)(player.getPosition().getY() + move.getY());
         Point2D newPos = new Point2D(newX, newY);
-        boolean stopMovement = false;
+
+        boolean stopMovement = false; // Flag to cancel movement
 
         // Check for combat
         for (Enemy enemy: enemies) {
             if (map.inSameTile(newPos, enemy.getPosition())) {
                 stopMovement = true; // Stop moving if there is an enemy in the way
-                // ToDo: Add Combat
+                player.attack(enemy);
             }
         }
 
@@ -146,6 +156,7 @@ public class Main extends Application {
             centerCamera();
         }
 
+        // Update and re-render the game
         updateGame();
         renderGame();
     }
@@ -158,7 +169,7 @@ public class Main extends Application {
 
         // Check for combat
         if (map.inSameTile(enemy.getPosition(), player.getPosition()) || map.inSameTile(newPos, player.getPosition())) {
-            // ToDo: Add combat
+            enemy.attack(player);
         }
         // Check for collision
         else if (!map.checkCollisionAt(newX, newY)) {
@@ -185,8 +196,8 @@ public class Main extends Application {
         centerCamera();
 
         // Add enemies
-        for (Point2D spawn : data.getEnemyPoints()) {
-            enemies.add(new Enemy(spawn.getX(), spawn.getY()));
+        for (Point2D spawnPoint: data.getEnemyPoints()) {
+            enemies.add(new Enemy(spawnPoint));
         }
 
         // Set the map tiles
@@ -266,23 +277,23 @@ public class Main extends Application {
     private void renderPlayer() {
         // The player is a frame of the tileset image for now
         AssetManager.AtlasImage imageSheet = AssetManager.getImages().get("Tileset");
-        var playerRect = imageSheet.getFrame("Player");
+        Rectangle2D frame = imageSheet.getFrame(player.getTileName());
 
         ctx.drawImage(imageSheet.getImg(),
-            playerRect.getMinX(), playerRect.getMinY(), playerRect.getWidth(), playerRect.getHeight(),
-        player.getPosition().getX() * AssetManager.TILE_SIZE, player.getPosition().getY() * AssetManager.TILE_SIZE, playerRect.getWidth(), playerRect.getHeight()
+            frame.getMinX(), frame.getMinY(), frame.getWidth(), frame.getHeight(),
+        player.getPosition().getX() * AssetManager.TILE_SIZE, player.getPosition().getY() * AssetManager.TILE_SIZE, frame.getWidth(), frame.getHeight()
         );
     }
 
     private void renderEnemies() {
         // Enemies are frame of the tileset image for now
         AssetManager.AtlasImage imageSheet = AssetManager.getImages().get("Tileset");
-        var enemyRect = imageSheet.getFrame("Enemy");
 
         for (Enemy enemy : enemies) {
+            Rectangle2D frame = imageSheet.getFrame(enemy.getTileName());
             ctx.drawImage(imageSheet.getImg(),
-                enemyRect.getMinX(), enemyRect.getMinY(), enemyRect.getWidth(), enemyRect.getHeight(),
-            enemy.getPosition().getX() * AssetManager.TILE_SIZE, enemy.getPosition().getY() * AssetManager.TILE_SIZE, enemyRect.getWidth(), enemyRect.getHeight()
+                frame.getMinX(), frame.getMinY(), frame.getWidth(), frame.getHeight(),
+            enemy.getPosition().getX() * AssetManager.TILE_SIZE, enemy.getPosition().getY() * AssetManager.TILE_SIZE, frame.getWidth(), frame.getHeight()
             );
         }
     }
