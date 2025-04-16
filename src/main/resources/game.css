@@ -1,0 +1,28 @@
+.root {
+    -fx-background-color: black;
+    -fx-font-size: 12pt;
+}
+
+.ui-border {
+    -fx-background-color: #303030;
+    -fx-control-inner-background: #303030;
+    -fx-border-color: #404050;
+    -fx-border-width: 4px;
+
+    -fx-text-fill: #eeeeee;
+    -fx-font-size: 14px;
+}
+
+.ui-border .label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #eeeeee;
+}
+
+.ui-border .scroll-bar:vertical {
+    -fx-pref-width: 1;
+    -fx-opacity: 0;
+}
+.ui-border .scroll-bar:horizontal {
+    -fx-pref-height: 1;
+    -fx-opacity: 0;
+}
