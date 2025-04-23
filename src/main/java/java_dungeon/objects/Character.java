@@ -52,16 +52,6 @@ public abstract class Character {
     }
     public void takeDamage(int damage) {
         health = Math.max(health - damage, 0); // Health should never be negative
-
-        // Display damage and status
-        Globals.logger.logMessage(String.format("%s takes %d damage.", this.getClass().getSimpleName(), damage));
-
-        if (!isDead()) {
-            Globals.logger.logMessage(String.format("%s's health is now %d.", this.getClass().getSimpleName(), getHealth()));
-        }
-        else {
-            Globals.logger.logMessage(String.format("%s is dead.", this.getClass().getSimpleName()));
-        }
     }
 
     public void attack(Character target) {
@@ -69,8 +59,15 @@ public abstract class Character {
         String name = this.getClass().getSimpleName();
         String otherName = target.getClass().getSimpleName();
 
-        // Print the action
-        Globals.logger.logMessage(String.format("%s attacks %s!", name, otherName));
+        // Just a basic attack
         target.takeDamage(damage);
+
+        // Print the action
+        Globals.logger.logMessage(String.format("%s attacks %s for %d damage. %s", name, otherName, damage, target.getHealthMessage()));
+    }
+
+    public String getHealthMessage() {
+        String name = this.getClass().getSimpleName();
+        return (isDead()) ? String.format("%s is dead.", name) : String.format("%s's health is now %d.", name, health);
     }
 }

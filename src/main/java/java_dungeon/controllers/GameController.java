@@ -67,6 +67,8 @@ public class GameController extends ControllerBase {
         ctx.setImageSmoothing(false);
 
         // Set up the game
+//        logText.appendText("\nExtra line");
+        logText.appendText("");
         Globals.logger.setLogPanel(logText);
         generateLevel();
         renderGame();
@@ -153,7 +155,7 @@ public class GameController extends ControllerBase {
 
             // Get the direction to move towards the target
             Point2D toTarget = enemy.getTargetPoint().subtract(enemy.getPosition());
-            Point2D moveDirection = getDirectionOnGrid(toTarget);
+            Point2D moveDirection = map.getDirectionOnGrid(toTarget);
 
             // Try to slide around walls
             if (map.checkCollisionAt((int)(enemy.getPosition().getX() + moveDirection.getX()), (int)(enemy.getPosition().getY() + moveDirection.getY()))) {
@@ -187,15 +189,6 @@ public class GameController extends ControllerBase {
         // Check for collision
         else if (!map.checkCollisionAt(newX, newY)) {
             enemy.move(move);
-        }
-    }
-
-    private Point2D getDirectionOnGrid(Point2D direction) {
-        if (Math.abs(direction.getX()) >= Math.abs(direction.getY())) {
-            return new Point2D(Math.signum(direction.getX()), 0);
-        }
-        else {
-            return new Point2D(0, Math.signum(direction.getY()));
         }
     }
 

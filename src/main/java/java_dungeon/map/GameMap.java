@@ -109,4 +109,15 @@ public class GameMap {
     public boolean inSameTile(Point2D a, Point2D b) {
         return (int)a.getX() == (int)b.getX() && (int)a.getY() == (int)b.getY();
     }
+
+    // Returns a 4-directional (grid) direction from an arbitrary direction
+    public Point2D getDirectionOnGrid(Point2D direction) {
+        // Keep the largest axis of the direction
+        if (Math.abs(direction.getX()) >= Math.abs(direction.getY())) {
+            return new Point2D(Math.signum(direction.getX()), 0);
+        }
+        else {
+            return new Point2D(0, Math.signum(direction.getY()));
+        }
+    }
 }

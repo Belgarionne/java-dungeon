@@ -12,4 +12,5 @@ public class Globals {
 
     // Global logger used to log to the console or a log panel in the UI
     public static final Logger logger = new Logger();
+    public static final int MAX_LOG_LINES = 8;
 }
