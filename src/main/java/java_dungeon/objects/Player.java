@@ -1,6 +1,6 @@
 package java_dungeon.objects;
 
-import java_dungeon.Globals;
+import java_dungeon.main.Globals;
 import javafx.geometry.Point2D;
 
 public class Player extends Character implements Drawable {
@@ -11,7 +11,7 @@ public class Player extends Character implements Drawable {
     private int currentXp;
 
     public Player(Point2D position) {
-        super(position, 10, 1);
+        super("Player", position, 10, 1, 0);
 
         expToLevel = 10;
         level = 1;
@@ -19,13 +19,15 @@ public class Player extends Character implements Drawable {
     }
 
     @Override
-    public void takeDamage(int damage) {
-        super.takeDamage(damage);
+    public int takeDamage(int damage) {
+        int totalDmg = super.takeDamage(damage);
 
         // ToDo: Add game over logic here
         if (isDead()) {
             System.out.println("GAME OVER...");
         }
+
+        return totalDmg;
     }
 
     @Override
@@ -48,7 +50,7 @@ public class Player extends Character implements Drawable {
         // Keep gaining levels until below the xp to level
         while (currentXp >= expToLevel) {
             level++;
-            Globals.logger.logMessage(String.format("Player leveled up! Player is now level %d.", level));
+            Globals.logger.logMessage(String.format("%s leveled up! Player is now level %d.", name, level));
 
             expToLevel = (int)(expToLevel * XP_GROWTH_RATE);
             currentXp -= expToLevel;

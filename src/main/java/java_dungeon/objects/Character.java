@@ -1,29 +1,29 @@
 package java_dungeon.objects;
 
-import java_dungeon.Globals;
+import java_dungeon.main.Globals;
 import javafx.geometry.Point2D;
 
-public abstract class Character {
-    protected Point2D position;
+public abstract class Character extends GameObject {
+    protected final String name;
     protected int health;
     protected int maxHealth;
-    protected int damage;
 
-    public Character(Point2D position, int hp, int dmg) {
-        this.position = new Point2D(position.getX(), position.getY());
+    protected int damage; // Adds to damage done
+    protected int defense; // Subtracts from damage taken
+
+    public Character(String name, Point2D position, int hp, int dmg, int def) {
+        super(position);
+        this.name = name;
+
         this.health = hp;
         this.maxHealth = hp;
+
         this.damage = dmg;
+        this.defense = def;
     }
 
-    public Point2D getPosition() {
-        return position;
-    }
-    public void setPosition(Point2D position) {
-        this.position = position;
-    }
-    public void move(Point2D movement) {
-        position = position.add(movement);
+    public String getName() {
+        return name;
     }
 
     public int getHealth() {
@@ -40,6 +40,12 @@ public abstract class Character {
         this.maxHealth = maxHealth;
     }
 
+    public int takeDamage(int damage) {
+        int mitigatedDamage = Math.max(damage - defense, 0);
+        health = Math.max(health - mitigatedDamage, 0); // Health should never be negative
+        return mitigatedDamage; // Return the actual amount of damage that was done
+    }
+
     public boolean isDead() {
         return health <= 0;
     }
@@ -50,24 +56,25 @@ public abstract class Character {
     public void setDamage(int damage) {
         this.damage = damage;
     }
-    public void takeDamage(int damage) {
-        health = Math.max(health - damage, 0); // Health should never be negative
+
+    public int getDefense() {
+        return defense;
+    }
+    public void setDefense(int defense) {
+        this.defense = defense;
     }
 
+    // Default attack behavior
     public void attack(Character target) {
-        // Just use class names for now
-        String name = this.getClass().getSimpleName();
-        String otherName = target.getClass().getSimpleName();
-
         // Just a basic attack
-        target.takeDamage(damage);
+        int dmgDone = target.takeDamage(damage);
 
         // Print the action
-        Globals.logger.logMessage(String.format("%s attacks %s for %d damage. %s", name, otherName, damage, target.getHealthMessage()));
+        Globals.logger.logMessage(String.format("%s attacks %s for %d damage. %s", getName(), target.getName(), dmgDone, target.getHealthMessage()));
     }
 
+    // Returns details about the hp of the character
     public String getHealthMessage() {
-        String name = this.getClass().getSimpleName();
-        return (isDead()) ? String.format("%s is dead.", name) : String.format("%s's health is now %d.", name, health);
+        return (isDead()) ? String.format("%s is dead.", getName()) : String.format("%s's health is now %d.", getName(), health);
     }
 }

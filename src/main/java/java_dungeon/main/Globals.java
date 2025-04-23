@@ -1,4 +1,4 @@
-package java_dungeon;
+package java_dungeon.main;
 
 public class Globals {
     // SNES rendering size

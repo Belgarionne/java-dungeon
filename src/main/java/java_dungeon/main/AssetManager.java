@@ -1,4 +1,4 @@
-package java_dungeon;
+package java_dungeon.main;
 
 import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;

@@ -87,18 +87,18 @@ public class DungeonGeneratorBSP implements DungeonGenerator {
         }
         // Draw corridors
         for (Room corridor : corridors) {
-            drawRoom(corridor, map);
+            drawCorridor(corridor, map);
         }
 
         // Pick a random player start
         int startRoomIndex = rand.nextInt(rooms.size());
-        data.setPlayerStart(new Point2D(rooms.get(startRoomIndex).getCenterX(), rooms.get(startRoomIndex).getCenterY()));
+        data.setPlayerStart(randomEmptyPosInRoom(rooms.get(startRoomIndex), map, false));
 
         // Add 1 enemy to each room
         for (int i = 0; i < rooms.size(); i++) {
             // Don't add an enemy to the starting room
             if (i != startRoomIndex) {
-                data.getEnemyPoints().add(new Point2D(rooms.get(i).getCenterX(), rooms.get(i).getCenterY()));
+                data.getEnemyPoints().add(randomEmptyPosInRoom(rooms.get(i), map, false));
             }
         }
 
@@ -151,7 +151,6 @@ public class DungeonGeneratorBSP implements DungeonGenerator {
                 return; // Too small to make a valid room
             }
 
-            // ToDo: Maybe load rooms from a file and place a random one here
             // Make a room with a random size inside the node space
             int roomWidth = minRoomSize - 2 + rand.nextInt(0, node.w - minRoomSize + 1);
             int roomHeight = minRoomSize - 2  + rand.nextInt(0, node.h - minRoomSize + 1);
@@ -211,11 +210,40 @@ public class DungeonGeneratorBSP implements DungeonGenerator {
 
     private void drawRoom(Room room, String[][] map) {
         // Set all the tiles in the room to ground
-        // ToDo: decorate rooms
         for (int y = room.y; y < (room.y + room.h); y++) {
             for (int x = room.x; x < (room.x + room.w); x++) {
                 map[y][x] = "Ground";
             }
         }
+
+        // Add random walls
+        int roomArea = room.w * room.h;
+        for (int i = 0; i < rand.nextInt((int)(roomArea * 0.05), (int)(roomArea * 0.2)); i++) {
+            // Place the wall in a random spot (avoiding a 1 tile border so the room is traversable)
+            int x = rand.nextInt(room.x + 1, room.x + room.w - 1);
+            int y = rand.nextInt(room.y + 1, room.y + room.h - 1);
+            map[y][x] = "Wall";
+        }
+    }
+
+    private void drawCorridor(Room room, String[][] map) {
+        // Set all the tiles in the corridor to ground
+        for (int y = room.y; y < (room.y + room.h); y++) {
+            for (int x = room.x; x < (room.x + room.w); x++) {
+                map[y][x] = "Ground";
+            }
+        }
+    }
+
+    private Point2D randomEmptyPosInRoom(Room room, String[][] map, boolean avoidBorder) {
+        int x = room.x + (avoidBorder ? rand.nextInt(1, room.w - 1) : rand.nextInt(0, room.w));
+        int y = room.y + (avoidBorder ? rand.nextInt(1, room.h - 1) : rand.nextInt(0, room.h));
+
+        while (map[y][x].equalsIgnoreCase("Wall")) {
+            x = room.x + (avoidBorder ? rand.nextInt(1, room.w - 1) : rand.nextInt(0, room.w));
+            y = room.y + (avoidBorder ? rand.nextInt(1, room.h - 1) : rand.nextInt(0, room.h));
+        }
+
+        return new Point2D(x, y);
     }
 }

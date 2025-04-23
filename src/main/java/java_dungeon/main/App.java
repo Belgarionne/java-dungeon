@@ -1,4 +1,4 @@
-package java_dungeon;
+package java_dungeon.main;
 
 import java_dungeon.controllers.ControllerBase;
 

@@ -1,13 +1,14 @@
 package java_dungeon.controllers;
 
-import java_dungeon.AssetManager;
-import java_dungeon.Globals;
+import java_dungeon.main.AssetManager;
+import java_dungeon.main.Globals;
 
 import java_dungeon.gui.AutoScalingCanvas;
 import java_dungeon.map.DungeonGenerator;
 import java_dungeon.map.DungeonGeneratorBSP;
 import java_dungeon.map.GameMap;
 import java_dungeon.objects.Character;
+import java_dungeon.objects.ChaseEnemy;
 import java_dungeon.objects.Enemy;
 import java_dungeon.objects.Player;
 import javafx.fxml.FXML;
@@ -138,57 +139,9 @@ public class GameController extends ControllerBase {
         List<Enemy> deadEnemies = enemies.stream().filter(Character::isDead).toList();
         enemies.removeAll(deadEnemies);
 
-        // ToDo: Extract into method for different enemies
+        // Update each AI
         for (Enemy enemy : enemies) {
-            double distToPlayer = enemy.getPosition().distance(player.getPosition());
-
-            // Update the enemy's target if the player is in view
-            if (distToPlayer <= enemy.getSightDistance() && !map.linecast(enemy.getPosition(), player.getPosition())) {
-                enemy.setTargetPoint(player.getPosition());
-            }
-
-            // Only move if the enemy has a target (or remove the target if it was reached)
-            if (enemy.getTargetPoint() == null || map.inSameTile(enemy.getPosition(), enemy.getTargetPoint())) {
-                enemy.setTargetPoint(null);
-                continue;
-            }
-
-            // Get the direction to move towards the target
-            Point2D toTarget = enemy.getTargetPoint().subtract(enemy.getPosition());
-            Point2D moveDirection = map.getDirectionOnGrid(toTarget);
-
-            // Try to slide around walls
-            if (map.checkCollisionAt((int)(enemy.getPosition().getX() + moveDirection.getX()), (int)(enemy.getPosition().getY() + moveDirection.getY()))) {
-                double dx = Math.signum(toTarget.getX());
-                double dy = Math.signum(toTarget.getY());
-
-                // Move in the opposite axis
-                if (moveDirection.getX() != 0) {
-                    moveDirection = new Point2D(0, dy);
-                }
-                else if (moveDirection.getY() != 0) {
-                    moveDirection = new Point2D(dx, 0);
-                }
-            }
-
-            // Move
-            moveEnemy(enemy, moveDirection);
-        }
-    }
-
-    private void moveEnemy(Enemy enemy, Point2D move) {
-        // Get the new position
-        int newX = (int)(enemy.getPosition().getX() + move.getX());
-        int newY = (int)(enemy.getPosition().getY() + move.getY());
-        Point2D newPos = new Point2D(newX, newY);
-
-        // Check for combat
-        if (map.inSameTile(enemy.getPosition(), player.getPosition()) || map.inSameTile(newPos, player.getPosition())) {
-            enemy.attack(player);
-        }
-        // Check for collision
-        else if (!map.checkCollisionAt(newX, newY)) {
-            enemy.move(move);
+            enemy.updateAI(map, player);
         }
     }
 
@@ -203,7 +156,7 @@ public class GameController extends ControllerBase {
 
         // Add enemies
         for (Point2D spawnPoint: data.getEnemyPoints()) {
-            enemies.add(new Enemy(spawnPoint));
+            enemies.add(new ChaseEnemy(spawnPoint));
         }
         enemyCount = enemies.size();
 
