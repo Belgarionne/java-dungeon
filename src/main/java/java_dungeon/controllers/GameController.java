@@ -1,5 +1,8 @@
 package java_dungeon.controllers;
 
+import java_dungeon.gui.ItemView;
+import java_dungeon.items.Equipment;
+import java_dungeon.items.Item;
 import java_dungeon.main.AssetManager;
 import java_dungeon.main.Globals;
 
@@ -7,10 +10,9 @@ import java_dungeon.gui.AutoScalingCanvas;
 import java_dungeon.map.DungeonGenerator;
 import java_dungeon.map.DungeonGeneratorBSP;
 import java_dungeon.map.GameMap;
+import java_dungeon.objects.*;
 import java_dungeon.objects.Character;
-import java_dungeon.objects.ChaseEnemy;
-import java_dungeon.objects.Enemy;
-import java_dungeon.objects.Player;
+
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
@@ -18,8 +20,12 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
@@ -28,13 +34,23 @@ import java.util.List;
 public class GameController extends ControllerBase {
     // FXML controls
     @FXML
+    private Label atkLbl;
+    @FXML
+    private Label defLbl;
+    @FXML
     private Label enemiesLbl;
     @FXML
     private Label hpLbl;
     @FXML
+    private GridPane inventoryGrid;
+    @FXML
+    private Label nameLbl;
+    @FXML
     private BorderPane root;
     @FXML
     private TextArea logText;
+    @FXML
+    private Label xpLbl;
 
     // Game canvas
     private AutoScalingCanvas canvas;
@@ -44,6 +60,7 @@ public class GameController extends ControllerBase {
     private final GameMap map;
     private final Player player;
     private final ArrayList<Enemy> enemies;
+    private final ArrayList<ItemPickup> itemPickups;
     private int enemyCount;
 
     private Point2D cameraPos;
@@ -53,39 +70,33 @@ public class GameController extends ControllerBase {
         this.player = new Player(new Point2D(0, 0));
         this.cameraPos = new Point2D(0, 0);
         this.enemies = new ArrayList<>();
+        this.itemPickups = new ArrayList<>();
     }
 
     @FXML
     void initialize() {
-        assert enemiesLbl != null : "fx:id=\"enemiesLbl\" was not injected: check your FXML file 'game.fxml'.";
-        assert hpLbl != null : "fx:id=\"hpLbl\" was not injected: check your FXML file 'game.fxml'.";
-        assert logText != null : "fx:id=\"logText\" was not injected: check your FXML file 'game.fxml'.";
-        assert root != null : "fx:id=\"root\" was not injected: check your FXML file 'game.fxml'.";
-
         // Set up the canvas
         canvas = new AutoScalingCanvas(Globals.SCREEN_WIDTH, Globals.SCREEN_HEIGHT);
         ctx = canvas.getGraphicsContext2D();
         ctx.setImageSmoothing(false);
 
+        for (int y = 0; y < inventoryGrid.getRowCount(); y++) {
+            for (int x = 0; x < inventoryGrid.getColumnCount(); x++) {
+                ItemView view = new ItemView();
+
+                int finalIndex = y * inventoryGrid.getColumnCount() + x;
+                view.setOnMouseClicked(e -> onItemViewClicked(finalIndex, e)); // Event to use/equip item in the view
+                inventoryGrid.add(view, x, y);
+            }
+        }
+
         // Set up the game
-//        logText.appendText("\nExtra line");
-        logText.appendText("");
         Globals.logger.setLogPanel(logText);
-        generateLevel();
+        generateLevel(0);
         renderGame();
 
         // Redraw the game if the canvas is resized (window resizing)
         canvas.scalingProperty().addListener((obs) -> renderGame());
-
-        // Debug update loop (Moves the camera 1 unit to the left every second)
-//        AnimationTimer animator = new AnimationTimer() {
-//            @Override
-//            public void handle(long currentTime) {
-//                camX -= 0.5/60.0;
-//                renderGame();
-//            }
-//        };
-//        animator.start();
 
         root.setCenter(canvas);
     }
@@ -94,17 +105,61 @@ public class GameController extends ControllerBase {
     public void initializeScene(Scene scene) {
         super.initializeScene(scene);
         scene.addEventFilter(KeyEvent.KEY_PRESSED, this::onKeyPressed);
-//        scene.setOnKeyPressed(this::onKeyPressed);
     }
 
     private void onKeyPressed(KeyEvent event) {
-        // Check if the key pressed was one of the arrow keys
-        switch (event.getCode().getName()) {
-            case "Left" -> movePlayer(new Point2D(-1, 0));
-            case "Right" -> movePlayer(new Point2D(1, 0));
-            case "Up" -> movePlayer(new Point2D(0, -1));
-            case "Down" -> movePlayer(new Point2D(0, 1));
+        // Handle input controls
+        // Movement: Arrow keys and WASD
+        // Pickup items: F
+        switch (event.getCode()) {
+            case KeyCode.LEFT, KeyCode.A -> movePlayer(new Point2D(-1, 0));
+            case RIGHT, KeyCode.D -> movePlayer(new Point2D(1, 0));
+            case UP, KeyCode.W -> movePlayer(new Point2D(0, -1));
+            case DOWN, KeyCode.S -> movePlayer(new Point2D(0, 1));
+            case F -> pickupItem();
         }
+    }
+
+    private void onItemViewClicked(int index, MouseEvent e) {
+        Item itemInSlot = player.getItem(index);
+        if (itemInSlot == null) { return; } // Can't do anything if there is no item in the clicked slot
+
+        // Right-click drops items
+        if (e.getButton() == MouseButton.SECONDARY) {
+            Globals.logger.logMessage(String.format("Dropping item %s.", player.getItem(index).getName()));
+
+            // Unequip the item if it is equipped
+            if (itemInSlot instanceof Equipment equipment && player.isEquipped(equipment)) {
+                player.unequip(equipment.getSlot());
+            }
+
+            ItemPickup droppedPickup = new ItemPickup(player.removeItem(index), player.getPosition());
+            itemPickups.add(droppedPickup);
+
+            // Refresh the game to show the pickup
+            updateInventoryUI();
+            renderGame();
+            return;
+        }
+
+        // Equip equipment
+        if (itemInSlot instanceof Equipment equipment) {
+            boolean isEquipped = player.isEquipped(equipment);
+
+            // Equip or un-equip the item depending on whether it is already equipped
+            if (!isEquipped) {
+                player.equip(equipment);
+                Globals.logger.logMessage(String.format("Equipping %s, %s.", equipment.getSlot(), equipment.getName()));
+            }
+            else {
+                player.unequip(equipment.getSlot());
+                Globals.logger.logMessage(String.format("Unequipping %s, %s.", equipment.getSlot(), equipment.getName()));
+            }
+        }
+
+        // Refresh the game / update UI
+        updateInventoryUI();
+        renderGame();
     }
 
     private void movePlayer(Point2D move) {
@@ -123,15 +178,48 @@ public class GameController extends ControllerBase {
             }
         }
 
-        // Check for collision
-        if (!stopMovement && !map.checkCollisionAt(newX, newY)) {
-            player.move(move);
-            centerCamera();
+        // Cancel picking up items or moving if movement was stopped
+        if (!stopMovement) {
+            // Show for possible item pickups
+            for (ItemPickup pickup: itemPickups) {
+                if (map.inSameTile(newPos, pickup.getPosition())) {
+                    Globals.logger.logMessage(String.format("You see here a %s.", pickup.getItem().getName()));
+                }
+            }
+
+            // Check for collision
+            if (!map.checkCollisionAt(newX, newY)) {
+                player.move(move);
+                centerCamera();
+            }
         }
 
         // Update and re-render the game
         updateGame();
         renderGame();
+    }
+
+    private void pickupItem() {
+        // Pickup first item at player's location
+        for (ItemPickup pickup: itemPickups) {
+            if (map.inSameTile(player.getPosition(), pickup.getPosition())) {
+                // Try to pick up the item (-1 is the fail result)
+                int itemIndex = player.addItem(pickup.getItem());
+                if (itemIndex < 0) {
+                    Globals.logger.logMessage(String.format("Cannot pick up %s, inventory is full.", pickup.getItem().getName()));
+                    return; // Can't pick up any more items if inventory is full
+                }
+
+                Globals.logger.logMessage(String.format("Picking up %s.", pickup.getItem().getName()));
+                itemPickups.remove(pickup);
+
+                // Refresh the game
+                updateInventoryUI();
+                updateGame();
+                renderGame();
+                return; // Stop after picking up the first item
+            }
+        }
     }
 
     private void updateGame() {
@@ -145,7 +233,7 @@ public class GameController extends ControllerBase {
         }
     }
 
-    private void generateLevel() {
+    private void generateLevel(int level) {
         // Generate the dungeon
         DungeonGenerator generator = new DungeonGeneratorBSP(6, 1);
         DungeonGenerator.DungeonData data = generator.generate(map.getWidth(), map.getHeight());
@@ -159,6 +247,11 @@ public class GameController extends ControllerBase {
             enemies.add(new ChaseEnemy(spawnPoint));
         }
         enemyCount = enemies.size();
+
+        // Add item pickups
+        for (Point2D pickupPoint : data.getItemPoints()) {
+            itemPickups.add(new ItemPickup(AssetManager.getItemFactory().createRandomItem(level + (int)(Math.random() * 2)), pickupPoint));
+        }
 
         // Set the map tiles
         map.setTiles(data.getTiles());
@@ -191,9 +284,10 @@ public class GameController extends ControllerBase {
         double renderScale = canvas.scalingProperty().get();
         ctx.save();
         ctx.scale(renderScale, renderScale);
-        ctx.translate(-cameraPos.getX() * AssetManager.TILE_SIZE, -cameraPos.getY() * AssetManager.TILE_SIZE);
+        ctx.translate(-cameraPos.getX() * Globals.TILE_SIZE, -cameraPos.getY() * Globals.TILE_SIZE);
 
         renderTiles(); // Draw the tilemap
+        renderPickups(); // Draw the item pickups
         renderEnemies(); // Draw the enemies
         renderPlayer(); // Draw the player
         renderUI(); // Render/update the UI
@@ -227,9 +321,9 @@ public class GameController extends ControllerBase {
             for (int x = startX; x < endX; x++) {
                 String tile = map.getTile(x, y);
                 ctx.drawImage(
-                        tileset.getImg(),
-                        tileset.getFrame(tile).getMinX(), tileset.getFrame(tile).getMinY(), AssetManager.TILE_SIZE, AssetManager.TILE_SIZE,
-                        x * AssetManager.TILE_SIZE, y * AssetManager.TILE_SIZE, AssetManager.TILE_SIZE, AssetManager.TILE_SIZE
+                    tileset.getImg(),
+                    tileset.getFrame(tile).getMinX(), tileset.getFrame(tile).getMinY(), Globals.TILE_SIZE, Globals.TILE_SIZE,
+                    x * Globals.TILE_SIZE, y * Globals.TILE_SIZE, Globals.TILE_SIZE, Globals.TILE_SIZE
                 );
             }
         }
@@ -241,8 +335,8 @@ public class GameController extends ControllerBase {
         Rectangle2D frame = imageSheet.getFrame(player.getTileName());
 
         ctx.drawImage(imageSheet.getImg(),
-                frame.getMinX(), frame.getMinY(), frame.getWidth(), frame.getHeight(),
-                player.getPosition().getX() * AssetManager.TILE_SIZE, player.getPosition().getY() * AssetManager.TILE_SIZE, frame.getWidth(), frame.getHeight()
+            frame.getMinX(), frame.getMinY(), frame.getWidth(), frame.getHeight(),
+            player.getPosition().getX() * Globals.TILE_SIZE, player.getPosition().getY() * Globals.TILE_SIZE, frame.getWidth(), frame.getHeight()
         );
     }
 
@@ -253,18 +347,45 @@ public class GameController extends ControllerBase {
         for (Enemy enemy : enemies) {
             Rectangle2D frame = imageSheet.getFrame(enemy.getTileName());
             ctx.drawImage(imageSheet.getImg(),
-                    frame.getMinX(), frame.getMinY(), frame.getWidth(), frame.getHeight(),
-                    enemy.getPosition().getX() * AssetManager.TILE_SIZE, enemy.getPosition().getY() * AssetManager.TILE_SIZE, frame.getWidth(), frame.getHeight()
+                frame.getMinX(), frame.getMinY(), frame.getWidth(), frame.getHeight(),
+                enemy.getPosition().getX() * Globals.TILE_SIZE, enemy.getPosition().getY() * Globals.TILE_SIZE, frame.getWidth(), frame.getHeight()
+            );
+        }
+    }
+
+    private void renderPickups() {
+        // Pickups are frame of the tileset image
+        AssetManager.AtlasImage imageSheet = AssetManager.getImages().get("Tileset");
+
+        for (ItemPickup pickup : itemPickups) {
+            Rectangle2D frame = imageSheet.getFrame(pickup.getTileName());
+            ctx.drawImage(imageSheet.getImg(),
+                frame.getMinX(), frame.getMinY(), frame.getWidth(), frame.getHeight(),
+                pickup.getPosition().getX() * Globals.TILE_SIZE, pickup.getPosition().getY() * Globals.TILE_SIZE, frame.getWidth(), frame.getHeight()
             );
         }
     }
 
     private void renderUI() {
-        updateHpLbl(player.getHealth(), player.getMaxHealth());
+        nameLbl.setText(String.format("%s Level %d", player.getName(), player.getLevel()));
+        xpLbl.setText(String.format("EXP: %d/%d", player.getExperience(), player.getExperienceToLevel()));
+        hpLbl.setText(String.format("Hp: %d/%d", player.getHealth(), player.getMaxHealth()));
         enemiesLbl.setText(String.format("Enemies: %d/%d", enemies.size(), enemyCount));
+        atkLbl.setText(String.format("Attack: %d", player.getDamage()));
+        defLbl.setText(String.format("Defense: %d", player.getDefense()));
     }
 
-    private void updateHpLbl(int current, int max) {
-        hpLbl.setText(String.format("Hp: %d/%d", current, max));
+    private void updateInventoryUI() {
+        for (int i = 0; i < inventoryGrid.getChildren().size(); i++) {
+            ItemView view = (ItemView)inventoryGrid.getChildren().get(i);
+            Item itemInSlot = player.getItem(i);
+
+            view.setHeldItem(itemInSlot);
+
+            // Check if the item is equipped
+            if (itemInSlot instanceof Equipment equipment && player.isEquipped(equipment)) {
+                view.setEquipState(true);
+            }
+        }
     }
 }

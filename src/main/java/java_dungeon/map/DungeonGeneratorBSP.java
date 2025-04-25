@@ -102,6 +102,11 @@ public class DungeonGeneratorBSP implements DungeonGenerator {
             }
         }
 
+        for (int i = 0; i < rand.nextInt((int)(rooms.size() * 0.2), (int)(rooms.size() * 0.6)); i++) {
+            int roomIndex = rand.nextInt(rooms.size());
+            data.getItemPoints().add(randomEmptyPosInRoom(rooms.get(roomIndex), map, false));
+        }
+
         return data;
     }
 
@@ -235,7 +240,7 @@ public class DungeonGeneratorBSP implements DungeonGenerator {
         }
     }
 
-    private Point2D randomEmptyPosInRoom(Room room, String[][] map, boolean avoidBorder) {
+    public Point2D randomEmptyPosInRoom(Room room, String[][] map, boolean avoidBorder) {
         int x = room.x + (avoidBorder ? rand.nextInt(1, room.w - 1) : rand.nextInt(0, room.w));
         int y = room.y + (avoidBorder ? rand.nextInt(1, room.h - 1) : rand.nextInt(0, room.h));
 

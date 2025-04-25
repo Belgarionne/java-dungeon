@@ -15,25 +15,25 @@ public class ChaseEnemy extends Enemy {
 
     @Override
     public void updateAI(GameMap map, Player player) {
-        double distToPlayer = position.distance(player.getPosition());
+        double distToPlayer = getPosition().distance(player.getPosition());
 
         // Update the enemy's target if the player is in view
-        if (distToPlayer <= sightDistance && !map.linecast(position, player.getPosition())) {
+        if (distToPlayer <= sightDistance && !map.linecast(getPosition(), player.getPosition())) {
             targetPoint = player.getPosition();
         }
 
         // Only move if the enemy has a target (or remove the target if it was reached)
-        if (targetPoint == null || map.inSameTile(position, targetPoint)) {
+        if (targetPoint == null || map.inSameTile(getPosition(), targetPoint)) {
             targetPoint = null;
             return;
         }
 
         // Get the direction to move towards the target
-        Point2D toTarget = targetPoint.subtract(position);
+        Point2D toTarget = targetPoint.subtract(getPosition());
         Point2D moveDirection = map.getDirectionOnGrid(toTarget);
 
         // Try to slide around walls
-        if (map.checkCollisionAt((int)(position.getX() + moveDirection.getX()), (int)(position.getY() + moveDirection.getY()))) {
+        if (map.checkCollisionAt((int)(getPosition().getX() + moveDirection.getX()), (int)(getPosition().getY() + moveDirection.getY()))) {
             double dx = Math.signum(toTarget.getX());
             double dy = Math.signum(toTarget.getY());
 
@@ -47,12 +47,12 @@ public class ChaseEnemy extends Enemy {
         }
 
         // Get the new position on the grid (make sure the position is locked to a integer grid)
-        int newX = (int)(position.getX() + moveDirection.getX());
-        int newY = (int)(position.getY() + moveDirection.getY());
+        int newX = (int)(getPosition().getX() + moveDirection.getX());
+        int newY = (int)(getPosition().getY() + moveDirection.getY());
         Point2D newPos = new Point2D(newX, newY);
 
         // Check for combat
-        if (map.inSameTile(position, player.getPosition()) || map.inSameTile(newPos, player.getPosition())) {
+        if (map.inSameTile(getPosition(), player.getPosition()) || map.inSameTile(newPos, player.getPosition())) {
             attack(player);
         }
         // Check for collision

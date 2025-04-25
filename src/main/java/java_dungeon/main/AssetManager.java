@@ -1,5 +1,6 @@
 package java_dungeon.main;
 
+import java_dungeon.items.ItemFactory;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
 
@@ -27,16 +28,18 @@ public class AssetManager {
             return this.frames.get(name);
         }
     }
-    public static int TILE_SIZE = 16;
-
     private static final HashMap<String, AtlasImage> images = new HashMap<>();
+    private static final ItemFactory itemFactory = new ItemFactory();
 
     public static HashMap<String, AtlasImage> getImages() {
         return images;
     }
+    public static ItemFactory getItemFactory() {
+        return itemFactory;
+    }
 
     public static void initialize() {
-        AtlasImage tileset = loadAtlas("Tileset", "dungeon-tiles-3.png");
+        AtlasImage tileset = loadAtlas("Tileset", "dungeon-tiles.png");
 
         // Add all the tiles
         String[] tileNames = {
@@ -44,14 +47,14 @@ public class AssetManager {
             "Ground",
             "Door",
             "Boss-Door",
-            "Unused-1",
-            "Unused-2",
+            "Weapon",
+            "Armor",
             "Player",
-            "Enemy",
-            "Unused-4"
+            "Red-Cleric",
+            "Slime"
         };
-        int tilesPerRow = (int)(tileset.getImg().getWidth() / TILE_SIZE);
-        int tilesPerCol = (int)(tileset.getImg().getHeight() / TILE_SIZE);
+        int tilesPerRow = (int)(tileset.getImg().getWidth() / Globals.TILE_SIZE);
+        int tilesPerCol = (int)(tileset.getImg().getHeight() / Globals.TILE_SIZE);
 
         for (int y = 0; y < tilesPerCol; y++) {
             for (int x = 0; x < tilesPerRow; x++) {
@@ -60,10 +63,12 @@ public class AssetManager {
                 // Any unspecified tile is called UNTITLED-<overflow amount>
                 tileset.addFrame(
                     (nameIndex < tileNames.length) ? tileNames[nameIndex] : "UNTITLED-" + (nameIndex - tileNames.length),
-                    new Rectangle2D(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                    new Rectangle2D(x * Globals.TILE_SIZE, y * Globals.TILE_SIZE, Globals.TILE_SIZE, Globals.TILE_SIZE)
                 );
             }
         }
+
+        itemFactory.initialize();
     }
 
     public static AtlasImage loadAtlas(String name, String path) {

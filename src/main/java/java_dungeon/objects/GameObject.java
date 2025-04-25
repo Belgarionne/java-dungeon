@@ -3,7 +3,7 @@ package java_dungeon.objects;
 import javafx.geometry.Point2D;
 
 public class GameObject {
-    protected Point2D position;
+    private Point2D position;
 
     public GameObject(Point2D position) {
         this.position = position;

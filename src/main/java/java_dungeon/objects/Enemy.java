@@ -20,6 +20,6 @@ public class Enemy extends Character implements Drawable {
 
     @Override
     public String getTileName() {
-        return "Enemy";
+        return "Slime";
     }
 }

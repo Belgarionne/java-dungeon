@@ -1,0 +1,5 @@
+EQUIPMENT
+id:test_equipment1|name:Developer Armor|sprite:Armor|slot:ARMOR|dmg:0|def:1
+
+EQUIPMENT
+id:test_equipment2|name:Developer Weapon|sprite:Weapon|slot:WEAPON|dmg:1|def:0

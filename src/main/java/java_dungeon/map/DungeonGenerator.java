@@ -10,12 +10,14 @@ public interface DungeonGenerator {
     class DungeonData {
         private final String[][] tiles;
         private final ArrayList<Point2D> enemyPoints;
+        private final ArrayList<Point2D> itemPoints;
         private Point2D playerStart;
 
         public DungeonData(int width, int height) {
             this.tiles = new String[height][width];
             this.playerStart = new Point2D(0, 0);
             this.enemyPoints = new ArrayList<>();
+            this.itemPoints = new ArrayList<>();
         }
 
         public String[][] getTiles() {
@@ -28,6 +30,10 @@ public interface DungeonGenerator {
 
         public ArrayList<Point2D> getEnemyPoints() {
             return enemyPoints;
+        }
+
+        public ArrayList<Point2D> getItemPoints() {
+            return itemPoints;
         }
 
         public void setPlayerStart(Point2D playerStart) {
