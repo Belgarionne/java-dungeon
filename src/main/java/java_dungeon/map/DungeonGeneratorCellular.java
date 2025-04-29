@@ -16,7 +16,7 @@ public class DungeonGeneratorCellular implements DungeonGenerator {
     }
 
     @Override
-    public DungeonData generate(int width, int height) {
+    public DungeonData generate(int width, int height, int level) {
         DungeonData data = new DungeonData(width, height);
 
         // Temporary grid used to hold randomly filled room

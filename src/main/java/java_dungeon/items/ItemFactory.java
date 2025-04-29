@@ -75,6 +75,8 @@ public class ItemFactory {
         itemsReader.close(); // Close the file
     }
 
+    public String[] getItemIds() { return items.keySet().toArray(new String[0]); }
+
     public Item createItem(String id, int level) {
         ItemDefinition def = items.get(id);
 

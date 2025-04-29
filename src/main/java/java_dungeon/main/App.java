@@ -1,7 +1,5 @@
 package java_dungeon.main;
 
-import java_dungeon.controllers.ControllerBase;
-
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -28,19 +26,13 @@ public class App extends Application {
         stage.requestFocus();
     }
 
-    public static Scene loadScene(String fxml) throws IOException {
+    public static void loadScene(String fxml) throws IOException {
         // Make the fxml loader
         FXMLLoader fxmlLoader = new FXMLLoader(App.class.getClassLoader().getResource(fxml + ".fxml"));
         Scene scene = new Scene(fxmlLoader.load());
 
-        // Set up the controller after the scene has been created
-        ControllerBase controller = fxmlLoader.getController();
-        controller.initializeScene(scene);
-
         // Update the current scene
         App.stage.setScene(scene);
-
-        return scene;
     }
 
     public static void main(String[] args) {

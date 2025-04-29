@@ -49,6 +49,7 @@ public class GameMap {
     public String getTile(int x, int y) {
         return tiles[y][x];
     }
+    public void setTile(int x, int y, String tile) { tiles[y][x] = tile; }
 
     public boolean checkCollisionAt(int x, int y) {
         // No collision outside the tiles

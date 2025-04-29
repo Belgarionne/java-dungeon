@@ -20,7 +20,7 @@ public class Player extends Character implements Drawable {
     private final Equipment[] equippedItems;
 
     public Player(Point2D position) {
-        super("Player", position, 10, 1, 0);
+        super("Player", position, 15, 1, 0);
 
         this.expToLevel = 10;
         this.level = 1;
@@ -31,18 +31,6 @@ public class Player extends Character implements Drawable {
 
         this.inventory = new Item[24]; // 24 slot inventory
         this.equippedItems = new Equipment[Equipment.EquipSlot.values().length];
-    }
-
-    @Override
-    public int takeDamage(int damage) {
-        int totalDmg = super.takeDamage(damage);
-
-        // ToDo: Add game over logic here
-        if (isDead()) {
-            System.out.println("GAME OVER...");
-        }
-
-        return totalDmg;
     }
 
     @Override

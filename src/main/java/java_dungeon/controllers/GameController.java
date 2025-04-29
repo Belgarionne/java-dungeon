@@ -13,10 +13,10 @@ import java_dungeon.map.GameMap;
 import java_dungeon.objects.*;
 import java_dungeon.objects.Character;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.Scene;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
@@ -31,7 +31,7 @@ import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GameController extends ControllerBase {
+public class GameController {
     // FXML controls
     @FXML
     private Label atkLbl;
@@ -52,6 +52,8 @@ public class GameController extends ControllerBase {
     @FXML
     private Label xpLbl;
 
+    private boolean freezeGame; // Pauses the game when true (stops input and updates)
+
     // Game canvas
     private AutoScalingCanvas canvas;
     private GraphicsContext ctx;
@@ -61,16 +63,22 @@ public class GameController extends ControllerBase {
     private final Player player;
     private final ArrayList<Enemy> enemies;
     private final ArrayList<ItemPickup> itemPickups;
+    private Point2D exitPoint;
     private int enemyCount;
+    private int currentFloor;
 
     private Point2D cameraPos;
 
     public GameController() {
+        this.freezeGame = false;
+
         this.map = new GameMap();
         this.player = new Player(new Point2D(0, 0));
         this.cameraPos = new Point2D(0, 0);
         this.enemies = new ArrayList<>();
         this.itemPickups = new ArrayList<>();
+        this.exitPoint = new Point2D(0, 0);
+        this.currentFloor = 0;
     }
 
     @FXML
@@ -99,15 +107,14 @@ public class GameController extends ControllerBase {
         canvas.scalingProperty().addListener((obs) -> renderGame());
 
         root.setCenter(canvas);
-    }
 
-    @Override
-    public void initializeScene(Scene scene) {
-        super.initializeScene(scene);
-        scene.addEventFilter(KeyEvent.KEY_PRESSED, this::onKeyPressed);
+        // Init input once the scene has been set
+        Platform.runLater(() -> root.getScene().addEventFilter(KeyEvent.KEY_PRESSED, this::onKeyPressed));
     }
 
     private void onKeyPressed(KeyEvent event) {
+        if (freezeGame) { return; } // Don't handle input or update when the game is paused
+
         // Handle input controls
         // Movement: Arrow keys and WASD
         // Pickup items: F
@@ -116,7 +123,7 @@ public class GameController extends ControllerBase {
             case RIGHT, KeyCode.D -> movePlayer(new Point2D(1, 0));
             case UP, KeyCode.W -> movePlayer(new Point2D(0, -1));
             case DOWN, KeyCode.S -> movePlayer(new Point2D(0, 1));
-            case F -> pickupItem();
+            case F -> interact();
         }
     }
 
@@ -180,11 +187,16 @@ public class GameController extends ControllerBase {
 
         // Cancel picking up items or moving if movement was stopped
         if (!stopMovement) {
-            // Show for possible item pickups
+            // Show possible item pickups
             for (ItemPickup pickup: itemPickups) {
                 if (map.inSameTile(newPos, pickup.getPosition())) {
-                    Globals.logger.logMessage(String.format("You see here a %s.", pickup.getItem().getName()));
+                    Globals.logger.logMessage(String.format("You see a %s here.", pickup.getItem().getName()));
                 }
+            }
+
+            // Show exit point message
+            if (map.inSameTile(newPos, exitPoint)) {
+                Globals.logger.logMessage(String.format("You see stairs to level %d here.", currentFloor + 2));
             }
 
             // Check for collision
@@ -199,14 +211,14 @@ public class GameController extends ControllerBase {
         renderGame();
     }
 
-    private void pickupItem() {
+    private void interact() {
         // Pickup first item at player's location
         for (ItemPickup pickup: itemPickups) {
             if (map.inSameTile(player.getPosition(), pickup.getPosition())) {
                 // Try to pick up the item (-1 is the fail result)
                 int itemIndex = player.addItem(pickup.getItem());
                 if (itemIndex < 0) {
-                    Globals.logger.logMessage(String.format("Cannot pick up %s, inventory is full.", pickup.getItem().getName()));
+                    Globals.logger.logMessage(String.format("Cannot pick up %s. Inventory is full.", pickup.getItem().getName()));
                     return; // Can't pick up any more items if inventory is full
                 }
 
@@ -220,6 +232,19 @@ public class GameController extends ControllerBase {
                 return; // Stop after picking up the first item
             }
         }
+
+        // Check for floor exit
+        if (map.inSameTile(player.getPosition(), exitPoint)) {
+            // Increase the level
+            currentFloor++;
+            Globals.logger.logMessage(String.format("Moving to level %d....", currentFloor + 1));
+
+            // Generate the new dungeon
+            generateLevel(currentFloor);
+
+            // Refresh the screen
+            renderGame();
+        }
     }
 
     private void updateGame() {
@@ -231,30 +256,49 @@ public class GameController extends ControllerBase {
         for (Enemy enemy : enemies) {
             enemy.updateAI(map, player);
         }
+
+        // Game over
+        if (player.isDead()) {
+            freezeGame = true; // Freeze the game
+            Globals.logger.logMessage("GAME OVER...");
+        }
     }
 
     private void generateLevel(int level) {
+        // Clear data from previous floors
+        enemies.clear();
+        itemPickups.clear();
+
         // Generate the dungeon
         DungeonGenerator generator = new DungeonGeneratorBSP(6, 1);
-        DungeonGenerator.DungeonData data = generator.generate(map.getWidth(), map.getHeight());
+        DungeonGenerator.DungeonData data = generator.generate(map.getWidth(), map.getHeight(), level);
 
         // Set player position
         player.setPosition(data.getPlayerStart());
         centerCamera();
 
         // Add enemies
-        for (Point2D spawnPoint: data.getEnemyPoints()) {
-            enemies.add(new ChaseEnemy(spawnPoint));
+        for (DungeonGenerator.EnemySpawnData enemyData : data.getEnemySpawns()) {
+            enemies.add(new ChaseEnemy(enemyData.name(), enemyData.point(), enemyData.sprite(), enemyData.hp(), enemyData.dmg(), enemyData.def(), enemyData.xp()));
         }
         enemyCount = enemies.size();
 
         // Add item pickups
-        for (Point2D pickupPoint : data.getItemPoints()) {
-            itemPickups.add(new ItemPickup(AssetManager.getItemFactory().createRandomItem(level + (int)(Math.random() * 2)), pickupPoint));
+        for (DungeonGenerator.ItemSpawnData itemData : data.getItemSpawns()) {
+            itemPickups.add(
+                new ItemPickup(AssetManager.getItemFactory().createItem(itemData.id(), itemData.level()), itemData.point())
+            );
         }
+
+        // Set the exit point
+        exitPoint = data.getExitPoint();
+        System.out.printf("Exit = [%.2f, %.2f]\n", exitPoint.getX(), exitPoint.getY()); // Show the exit location for debugging
 
         // Set the map tiles
         map.setTiles(data.getTiles());
+
+        // Set the exit tile separately
+        map.setTile((int)exitPoint.getX(), (int)exitPoint.getY(), "Stairs");
     }
 
     private void centerCamera() {

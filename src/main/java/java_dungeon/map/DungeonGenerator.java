@@ -6,18 +6,23 @@ import java.util.ArrayList;
 
 // Base dungeon generator interface to allow multiple generation types
 public interface DungeonGenerator {
+    record EnemySpawnData(String name, Point2D point, String sprite, int hp, int dmg, int def, int xp) {}
+    record ItemSpawnData(Point2D point, String id, int level) {}
+
     // Data created from dungeon generation
     class DungeonData {
         private final String[][] tiles;
-        private final ArrayList<Point2D> enemyPoints;
-        private final ArrayList<Point2D> itemPoints;
+        private final ArrayList<EnemySpawnData> enemySpawns;
+        private final ArrayList<ItemSpawnData> itemSpawns;
         private Point2D playerStart;
+        private Point2D exitPoint;
 
         public DungeonData(int width, int height) {
             this.tiles = new String[height][width];
             this.playerStart = new Point2D(0, 0);
-            this.enemyPoints = new ArrayList<>();
-            this.itemPoints = new ArrayList<>();
+            this.exitPoint = new Point2D(0, 0);
+            this.enemySpawns = new ArrayList<>();
+            this.itemSpawns = new ArrayList<>();
         }
 
         public String[][] getTiles() {
@@ -28,18 +33,26 @@ public interface DungeonGenerator {
             return playerStart;
         }
 
-        public ArrayList<Point2D> getEnemyPoints() {
-            return enemyPoints;
+        public Point2D getExitPoint() {
+            return exitPoint;
         }
 
-        public ArrayList<Point2D> getItemPoints() {
-            return itemPoints;
+        public ArrayList<EnemySpawnData> getEnemySpawns() {
+            return enemySpawns;
+        }
+
+        public ArrayList<ItemSpawnData> getItemSpawns() {
+            return itemSpawns;
         }
 
         public void setPlayerStart(Point2D playerStart) {
             this.playerStart = playerStart;
         }
+
+        public void setExitPoint(Point2D exitPoint) {
+            this.exitPoint = exitPoint;
+        }
     }
 
-    DungeonData generate(int width, int height);
+    DungeonData generate(int width, int height, int level);
 }

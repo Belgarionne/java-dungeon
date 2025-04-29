@@ -5,10 +5,12 @@ import javafx.geometry.Point2D;
 
 public class Enemy extends Character implements Drawable {
     private final int xpReward;
+    private final String sprite;
 
-    public Enemy(Point2D position) {
-        super("Enemy", position, 1, 1, 0);
-        this.xpReward = 3;
+    public Enemy(String name, Point2D position, String sprite, int hp, int dmg, int def, int xp) {
+        super(name, position, hp, dmg, def);
+        this.sprite = sprite;
+        this.xpReward = xp;
     }
 
     public int getXpReward() {
@@ -20,6 +22,6 @@ public class Enemy extends Character implements Drawable {
 
     @Override
     public String getTileName() {
-        return "Slime";
+        return sprite;
     }
 }

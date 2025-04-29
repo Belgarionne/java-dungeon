@@ -1,5 +1,6 @@
 package java_dungeon.map;
 
+import java_dungeon.main.AssetManager;
 import javafx.geometry.Point2D;
 
 import java.util.ArrayList;
@@ -63,7 +64,7 @@ public class DungeonGeneratorBSP implements DungeonGenerator {
     }
 
     @Override
-    public DungeonData generate(int width, int height) {
+    public DungeonData generate(int width, int height, int level) {
         DungeonData data = new DungeonData(width, height);
         String[][] map = data.getTiles();
 
@@ -94,17 +95,47 @@ public class DungeonGeneratorBSP implements DungeonGenerator {
         int startRoomIndex = rand.nextInt(rooms.size());
         data.setPlayerStart(randomEmptyPosInRoom(rooms.get(startRoomIndex), map, false));
 
-        // Add 1 enemy to each room
-        for (int i = 0; i < rooms.size(); i++) {
-            // Don't add an enemy to the starting room
-            if (i != startRoomIndex) {
-                data.getEnemyPoints().add(randomEmptyPosInRoom(rooms.get(i), map, false));
+        // Pick a random exit point
+        int endRoomIndex = -1;
+        while (endRoomIndex < 0) {
+            int randIndex = rand.nextInt(rooms.size());
+            // Don't place the end right at the start
+            if (randIndex != startRoomIndex) {
+                endRoomIndex = randIndex;
             }
         }
+        data.setExitPoint(randomEmptyPosInRoom(rooms.get(endRoomIndex), map, false));
+
+        // Add 1 enemy to each room
+        String[] enemyTypes = { "Slime", "Skeleton", "Cultist" };
+        double[] enemySpawnWeights = { 0.6, 0.3, 0.1 }; // Spawn weights for each enemy type
+
+        for (int i = 0; i < rooms.size(); i++) {
+            // Don't add an enemy to the starting room
+            if (i == startRoomIndex) { continue; }
+
+            String type = weightedRandom(enemyTypes, enemySpawnWeights);
+            Point2D spawnPoint = randomEmptyPosInRoom(rooms.get(i), map, false);
+
+            int hp = rand.nextInt(2 + level * 3, 10 + level * 3);
+            int dmg = rand.nextInt(1 + level * 2, 3 + level * 2);
+            int def = rand.nextInt(0, 1 + level * 2);
+
+            // The name is also the name of the sprite image
+            data.getEnemySpawns().add(new EnemySpawnData(type, spawnPoint, type, hp, dmg, def, (level + 1) * 3));
+
+        }
+
+        // Add items to random rooms
+        String[] itemIds = AssetManager.getItemFactory().getItemIds();
 
         for (int i = 0; i < rand.nextInt((int)(rooms.size() * 0.2), (int)(rooms.size() * 0.6)); i++) {
             int roomIndex = rand.nextInt(rooms.size());
-            data.getItemPoints().add(randomEmptyPosInRoom(rooms.get(roomIndex), map, false));
+            Point2D spawnPoint = randomEmptyPosInRoom(rooms.get(roomIndex), map, false);
+            String id = itemIds[rand.nextInt(itemIds.length)];
+            int itemLvl = rand.nextInt(level, level + 3);
+
+            data.getItemSpawns().add(new ItemSpawnData(spawnPoint, id, itemLvl));
         }
 
         return data;
@@ -250,5 +281,25 @@ public class DungeonGeneratorBSP implements DungeonGenerator {
         }
 
         return new Point2D(x, y);
+    }
+
+    // Generic weighted-random item picker function
+    public <T> T weightedRandom(T[] items, double[] weights) {
+        // Compute the total weight of all items together.
+        // This can be skipped of course if sum is already 1.
+        double totalWeight = 0.0;
+        for (double weight : weights) {
+            totalWeight += weight;
+        }
+
+        // Now choose a random item.
+        int idx = 0;
+        for (double r = Math.random() * totalWeight; idx < items.length - 1; ++idx) {
+            r -= weights[idx];
+            if (r <= 0.0) break;
+        }
+
+        // Return the item
+        return items[idx];
     }
 }

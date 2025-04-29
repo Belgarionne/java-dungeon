@@ -22,7 +22,7 @@ public class DungeonGeneratorWalk implements DungeonGenerator {
     }
 
     @Override
-    public DungeonData generate(int width, int height) {
+    public DungeonData generate(int width, int height, int level) {
         DungeonData data = new DungeonData(width, height);
         String[][] map = data.getTiles();
 

@@ -47,11 +47,14 @@ public class AssetManager {
             "Ground",
             "Door",
             "Boss-Door",
+            "Stairs",
             "Weapon",
             "Armor",
+            "Potion",
             "Player",
-            "Red-Cleric",
-            "Slime"
+            "Cultist",
+            "Slime",
+            "Skeleton"
         };
         int tilesPerRow = (int)(tileset.getImg().getWidth() / Globals.TILE_SIZE);
         int tilesPerCol = (int)(tileset.getImg().getHeight() / Globals.TILE_SIZE);

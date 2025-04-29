@@ -7,8 +7,8 @@ public class ChaseEnemy extends Enemy {
     protected final double sightDistance;
     protected Point2D targetPoint; // Current point that the AI is moving towards
 
-    public ChaseEnemy(Point2D position) {
-        super(position);
+    public ChaseEnemy(String name, Point2D position, String sprite, int hp, int dmg, int def, int xp) {
+        super(name, position, sprite, hp, dmg, def, xp);
         this.sightDistance = 10.0;
         this.targetPoint = null;
     }
