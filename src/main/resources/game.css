@@ -2,16 +2,20 @@
     -fx-background-color: black;
 }
 
+.label {
+    -fx-text-fill: #eeeeee;
+}
+
+#gameover-label {
+    -fx-text-fill: red;
+}
+
 .ui-border {
     -fx-background-color: #303030;
     -fx-control-inner-background: #303030;
     -fx-border-color: #404050;
     -fx-border-width: 4px;
 
-    -fx-text-fill: #eeeeee;
-}
-
-.ui-border .label {
     -fx-text-fill: #eeeeee;
 }
 

@@ -1,0 +1,15 @@
+.root {
+    -fx-background-color: black;
+}
+
+#title-label {
+    -fx-text-fill: gold;
+}
+
+.button {
+    -fx-border-color: silver;
+    -fx-border-width: 4px;
+    -fx-border-radius: 4px;
+    -fx-background-color: #404050;
+    -fx-text-fill: #eeeeee;
+}

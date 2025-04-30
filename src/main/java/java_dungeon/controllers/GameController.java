@@ -3,6 +3,7 @@ package java_dungeon.controllers;
 import java_dungeon.gui.ItemView;
 import java_dungeon.items.Equipment;
 import java_dungeon.items.Item;
+import java_dungeon.main.App;
 import java_dungeon.main.AssetManager;
 import java_dungeon.main.Globals;
 
@@ -13,6 +14,7 @@ import java_dungeon.map.GameMap;
 import java_dungeon.objects.*;
 import java_dungeon.objects.Character;
 
+import javafx.animation.FadeTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
@@ -27,6 +29,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
+import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +49,9 @@ public class GameController {
     @FXML
     private Label nameLbl;
     @FXML
-    private BorderPane root;
+    private BorderPane gamePane;
+    @FXML
+    private BorderPane gameoverPane;
     @FXML
     private TextArea logText;
     @FXML
@@ -57,6 +62,8 @@ public class GameController {
     // Game canvas
     private AutoScalingCanvas canvas;
     private GraphicsContext ctx;
+
+    FadeTransition gameoverFade;
 
     // Game properties
     private final GameMap map;
@@ -106,10 +113,25 @@ public class GameController {
         // Redraw the game if the canvas is resized (window resizing)
         canvas.scalingProperty().addListener((obs) -> renderGame());
 
-        root.setCenter(canvas);
+        // Add the game canvas
+        gamePane.setCenter(canvas);
+
+        // Hide the game over screen
+        gameoverPane.setVisible(false);
+
+        // Make the game over fade transition (to use when the game ends)
+        gameoverFade = new FadeTransition(Duration.seconds(2), gameoverPane);
+        gameoverFade.setFromValue(0.0);
+        gameoverFade.setToValue(1.0);
 
         // Init input once the scene has been set
-        Platform.runLater(() -> root.getScene().addEventFilter(KeyEvent.KEY_PRESSED, this::onKeyPressed));
+        Platform.runLater(() -> gamePane.getScene().addEventFilter(KeyEvent.KEY_PRESSED, this::onKeyPressed));
+    }
+
+    @FXML
+    void returnToMenu() {
+        System.out.println("Return to menu...");
+        App.loadScene("start");
     }
 
     private void onKeyPressed(KeyEvent event) {
@@ -167,6 +189,12 @@ public class GameController {
         // Refresh the game / update UI
         updateInventoryUI();
         renderGame();
+    }
+
+    private void endGame() {
+        freezeGame = true;
+        gameoverPane.setVisible(true);
+        gameoverFade.playFromStart();
     }
 
     private void movePlayer(Point2D move) {
@@ -259,8 +287,8 @@ public class GameController {
 
         // Game over
         if (player.isDead()) {
-            freezeGame = true; // Freeze the game
             Globals.logger.logMessage("GAME OVER...");
+            endGame(); // End the game
         }
     }
 
