@@ -31,8 +31,10 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class GameController {
     // FXML controls
@@ -73,6 +75,7 @@ public class GameController {
     private Point2D exitPoint;
     private int enemyCount;
     private int currentFloor;
+    private long currentDungeonSeed;
 
     private Point2D cameraPos;
 
@@ -86,6 +89,8 @@ public class GameController {
         this.itemPickups = new ArrayList<>();
         this.exitPoint = new Point2D(0, 0);
         this.currentFloor = 0;
+
+        this.currentDungeonSeed = System.currentTimeMillis();
     }
 
     @FXML
@@ -107,7 +112,17 @@ public class GameController {
 
         // Set up the game
         Globals.logger.setLogPanel(logText);
-        generateLevel(0);
+
+        // Continue from the save if one exists
+        if (saveExists()) {
+            loadSave();
+        }
+        else {
+            generateLevel(0, System.currentTimeMillis());
+            writeSave();
+        }
+
+        updateInventoryUI();
         renderGame();
 
         // Redraw the game if the canvas is resized (window resizing)
@@ -195,6 +210,12 @@ public class GameController {
         freezeGame = true;
         gameoverPane.setVisible(true);
         gameoverFade.playFromStart();
+
+        // Delete the old save file (saves are deleted on death)
+        File saveFile = new File("saveFile.txt");
+        if (saveFile.exists() && saveFile.delete()) {
+            System.out.println("Deleting save file...");
+        }
     }
 
     private void movePlayer(Point2D move) {
@@ -263,12 +284,8 @@ public class GameController {
 
         // Check for floor exit
         if (map.inSameTile(player.getPosition(), exitPoint)) {
-            // Increase the level
-            currentFloor++;
-            Globals.logger.logMessage(String.format("Moving to level %d....", currentFloor + 1));
-
-            // Generate the new dungeon
-            generateLevel(currentFloor);
+            // Move to the next level
+            moveToNextLevel();
 
             // Refresh the screen
             renderGame();
@@ -279,6 +296,13 @@ public class GameController {
         // Remove dead enemies
         List<Enemy> deadEnemies = enemies.stream().filter(Character::isDead).toList();
         enemies.removeAll(deadEnemies);
+
+        // Save the player's level if it is a new high score
+        if (player.getLevel() > Globals.playerLvlHigh) {
+            Globals.playerLvlHigh = player.getLevel();
+            Globals.logger.logMessage("New highest player level reached!");
+            AssetManager.saveRecords();
+        }
 
         // Update each AI
         for (Enemy enemy : enemies) {
@@ -292,13 +316,35 @@ public class GameController {
         }
     }
 
-    private void generateLevel(int level) {
+    private void moveToNextLevel() {
+        // Increase the level
+        currentFloor++;
+        Globals.logger.logMessage(String.format("Moving to level %d....", currentFloor + 1));
+
+        // Check for a new high score
+        if (currentFloor > Globals.floorHigh) {
+            Globals.logger.logMessage("New highest dungeon level reached!");
+            Globals.floorHigh = currentFloor;
+            AssetManager.saveRecords();
+        }
+
+        // Generate the new dungeon
+        generateLevel(currentFloor, System.currentTimeMillis());
+
+        // Save the current game state
+        writeSave();
+    }
+
+    private void generateLevel(int level, long seed) {
         // Clear data from previous floors
         enemies.clear();
         itemPickups.clear();
 
-        // Generate the dungeon
+        // Generate the dungeon (set the seed specifically so it can be saved)
         DungeonGenerator generator = new DungeonGeneratorBSP(6, 1);
+        generator.setSeed(seed);
+        currentDungeonSeed = seed;
+
         DungeonGenerator.DungeonData data = generator.generate(map.getWidth(), map.getHeight(), level);
 
         // Set player position
@@ -448,6 +494,7 @@ public class GameController {
     }
 
     private void updateInventoryUI() {
+        // Updates each item view to show the corresponding item
         for (int i = 0; i < inventoryGrid.getChildren().size(); i++) {
             ItemView view = (ItemView)inventoryGrid.getChildren().get(i);
             Item itemInSlot = player.getItem(i);
@@ -460,4 +507,121 @@ public class GameController {
             }
         }
     }
+
+    private void loadSave() {
+        // Clear data from previous floors
+        enemies.clear();
+        itemPickups.clear();
+
+        Scanner reader;
+
+        try {
+            reader = new Scanner(new File("saveFile.txt"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Read all the lines of the file
+        while (reader.hasNextLine()) {
+            String type = reader.nextLine(); // Data types are "DUNGEON_DATA" and "PLAYER_DATA"
+
+            // Skip empty or commented out lines (// means commented out)
+            if (type.equalsIgnoreCase("") || type.substring(0, 2).equalsIgnoreCase("//")) {
+                continue;
+            }
+
+            // Data properties
+            String[] properties = reader.nextLine().split("\\|"); // Properties are seperated by |
+
+            switch (type) {
+                case "DUNGEON_DATA":
+                    // Dungeon generation data
+                    for (String prop : properties) {
+                        String[] values = prop.split(":"); // Property values are seperated by :
+                        switch (values[0]) {
+                            case "seed" -> currentDungeonSeed = Long.parseLong(values[1]);
+                            case "level" -> currentFloor = Integer.parseInt(values[1]);
+                        }
+                    }
+                    break;
+                case "PLAYER_DATA":
+                    // Stat data
+                    for (String prop : properties) {
+                        String[] values = prop.split(":"); // Property values are seperated by :
+                        switch (values[0]) {
+                            case "level" -> player.setLevel(Integer.parseInt(values[1]));
+                            case "xp" -> player.setExperience(Integer.parseInt(values[1]));
+                            case "xpToLevel" -> player.setExperienceToLevel(Integer.parseInt(values[1]));
+                            case "hp" -> player.setHealth(Integer.parseInt(values[1]));
+                        }
+                    }
+
+                    // No items
+                    if (!reader.hasNextLine()) {
+                        break;
+                    }
+
+                    // Inventory data
+                    String itemData = reader.nextLine();
+                    // Loop until a empty line is reached
+                    while (!itemData.equalsIgnoreCase("")) {
+                        System.out.printf("Line = %s\n", itemData);
+                        String[] itemProps = itemData.split(":")[1].split("\\|"); // Properties are seperated by |
+                        int itemIndex = player.addItem(AssetManager.getItemFactory().createItem(itemProps[0], Integer.parseInt(itemProps[1])));
+
+                        // Is the item equipped?
+                        if (Boolean.parseBoolean(itemProps[2])) {
+                            player.equip((Equipment)player.getItem(itemIndex));
+                        }
+
+                        // Stop if there are no more lines
+                        if (!reader.hasNextLine()) { break; }
+
+                        itemData = reader.nextLine();
+                    }
+                    break;
+            }
+        }
+
+        reader.close();
+
+        // Finally, generate the dungeon
+        generateLevel(currentFloor, currentDungeonSeed);
+    }
+
+    private void writeSave() {
+        try {
+            FileWriter writer = new FileWriter("saveFile.txt");
+            // Dungeon data section
+            writer.write("DUNGEON_DATA\n");
+            writer.write(String.format("seed:%d|level:%d\n", currentDungeonSeed, currentFloor));
+
+            // Player data section
+            writer.write("PLAYER_DATA\n");
+            writer.write(String.format(
+                "level:%d|xp:%d|xpToLevel:%d|hp:%d\n",
+                player.getLevel(), player.getExperience(), player.getExperienceToLevel(), player.getHealth()
+            ));
+
+            // Write all the items
+            for (Item item : player.getInventory()) {
+                if (item == null) { continue; }
+                writer.write(String.format(
+                    "item:%s|%d|%b\n",
+                    item.getId(), item.getLevel(), item instanceof Equipment equipment && player.isEquipped(equipment)
+                ));
+            }
+
+            writer.close();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private boolean saveExists() {
+        File saveFile = new File("saveFile.txt");
+        return saveFile.exists();
+    }
 }
+

@@ -4,7 +4,11 @@ import java_dungeon.items.ItemFactory;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.Scanner;
 
 public class AssetManager {
     public static class AtlasImage {
@@ -72,11 +76,63 @@ public class AssetManager {
         }
 
         itemFactory.initialize();
+
+        // Load the highscore
+        loadRecords();
     }
 
     public static AtlasImage loadAtlas(String name, String path) {
         AtlasImage atlas = new AtlasImage(new Image(path));
         images.put(name, atlas);
         return atlas;
+    }
+
+    public static void saveRecords() {
+        try {
+            FileWriter writer = new FileWriter("records.txt");
+            // Dungeon data section
+            writer.write("HIGHSCORE\n");
+            writer.write(String.format("floor:%d|playerLvl:%d\n", Globals.floorHigh, Globals.playerLvlHigh));
+
+            writer.close();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void loadRecords() {
+        File recordsFile = new File("records.txt");
+        Scanner reader;
+        try {
+            reader = new Scanner(recordsFile);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        while (reader.hasNextLine()) {
+            String line = reader.nextLine();
+
+            // Skip empty or commented out lines (// means commented out)
+            if (line.equalsIgnoreCase("") || line.substring(0, 2).equalsIgnoreCase("//")) {
+                continue;
+            }
+
+            String[] properties = reader.nextLine().split("\\|"); // Properties are seperated by |
+
+            switch (line) {
+                case "HIGHSCORE":
+                    for (String prop : properties) {
+                        String[] values = prop.split(":"); // Property values are seperated by :
+                        switch (values[0]) {
+                            case "floor" -> Globals.floorHigh = Integer.parseInt(values[1]);
+                            case "playerLvl" -> Globals.playerLvlHigh = Integer.parseInt(values[1]);
+                        }
+                    }
+                    break;
+            }
+        }
+
+        reader.close();
     }
 }

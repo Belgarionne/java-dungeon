@@ -57,7 +57,6 @@ public class Player extends Character implements Drawable {
 
             currentXp -= expToLevel;
             expToLevel += XP_GROWTH;
-            maxHealth += HP_GROWTH;
             calculateStats(); // Recalculate stats
             health = maxHealth; // Reset hp
         }
@@ -66,18 +65,29 @@ public class Player extends Character implements Drawable {
     public int getLevel() {
         return level;
     }
+    public void setLevel(int level) {
+        this.level = level;
+    }
 
     public int getExperience() {
         return currentXp;
     }
+    public void setExperience(int xp) {
+        this.currentXp = xp;
+    }
+
     public int getExperienceToLevel() {
         return expToLevel;
+    }
+    public void setExperienceToLevel(int xp) {
+        this.expToLevel = xp;
     }
 
     public Item getItem(int index)
     {
         return inventory[index];
     }
+    public Item[] getInventory() { return inventory; }
 
     public int addItem(Item item) {
         // Add the item to the first available/empty space
@@ -112,7 +122,8 @@ public class Player extends Character implements Drawable {
         return equippedItems[item.getSlot().ordinal()].equals(item);
     }
 
-    private void calculateStats() {
+    public void calculateStats() {
+        maxHealth = 15 + (level - 1) * HP_GROWTH;
         // Calculate damage from equipment
         equipmentDmg = 0;
         equipmentDef = 0;

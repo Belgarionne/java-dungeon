@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.image.Image?>
@@ -9,26 +10,54 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<StackPane stylesheets="@start.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="java_dungeon.controllers.StartController">
+<StackPane stylesheets="@start.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="java_dungeon.controllers.StartController">
    <ImageView fitHeight="720.0" fitWidth="1280.0" pickOnBounds="true" preserveRatio="true">
-      <Image url="@dungeonBG1-720p.jpg"/>
+      <Image url="@dungeonBG1-720p.jpg" />
    </ImageView>
-   <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0"
-               prefWidth="1280.0">
+   <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0">
       <center>
-         <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="64.0" BorderPane.alignment="CENTER">
+         <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="32.0" BorderPane.alignment="CENTER">
             <Label id="title-label" text="Java Dungeon">
                <font>
-                  <Font name="Algerian" size="64.0"/>
+                  <Font name="Algerian" size="64.0" />
                </font>
+               <VBox.margin>
+                  <Insets bottom="128.0" />
+               </VBox.margin>
             </Label>
-            <Button mnemonicParsing="false" onAction="#play" text="Play">
+            <Button mnemonicParsing="false" onAction="#newGame" prefHeight="64.0" prefWidth="256.0" text="New Game">
                <font>
-                  <Font size="24.0"/>
+                  <Font size="24.0" />
+               </font>
+            </Button>
+            <Button fx:id="continueBtn" disable="true" layoutX="608.0" layoutY="409.0" mnemonicParsing="false" onAction="#continueGame" prefHeight="64.0" prefWidth="256.0" text="Continue">
+               <font>
+                  <Font size="24.0" />
                </font>
             </Button>
          </VBox>
       </center>
+      <left>
+         <VBox id="highscore-vbox" prefWidth="200.0" BorderPane.alignment="CENTER">
+            <padding>
+               <Insets bottom="16.0" left="16.0" right="16.0" top="16.0"/>
+            </padding>
+            <Label text="Highscores">
+               <font>
+                  <Font name="Algerian" size="24.0"/>
+               </font>
+            </Label>
+            <Label fx:id="dungeonLvlHigh" text="Highest Floor: 100">
+               <font>
+                  <Font size="14.0"/>
+               </font>
+            </Label>
+            <Label fx:id="playerLvlHigh" text="Highest Player Level: 100">
+               <font>
+                  <Font size="14.0"/>
+               </font>
+            </Label>
+         </VBox>
+      </left>
    </BorderPane>
 </StackPane>

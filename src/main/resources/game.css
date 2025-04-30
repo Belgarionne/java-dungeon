@@ -1,6 +1,9 @@
 .root {
     -fx-background-color: black;
 }
+.root .border-pane {
+    -fx-background-color: black;
+}
 
 .label {
     -fx-text-fill: #eeeeee;

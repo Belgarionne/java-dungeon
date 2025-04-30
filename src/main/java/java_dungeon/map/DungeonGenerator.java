@@ -54,5 +54,6 @@ public interface DungeonGenerator {
         }
     }
 
+    void setSeed(long seed);
     DungeonData generate(int width, int height, int level);
 }

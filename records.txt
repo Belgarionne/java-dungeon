@@ -1,0 +1,2 @@
+HIGHSCORE
+floor:0|playerLvl:1

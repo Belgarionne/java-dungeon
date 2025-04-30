@@ -6,6 +6,16 @@
     -fx-text-fill: gold;
 }
 
+#highscore-vbox {
+    -fx-background-color: #303030;
+    -fx-border-color: #404050;
+    -fx-border-width: 4px;
+    -fx-text-fill: #eeeeee;
+}
+#highscore-vbox .label {
+    -fx-text-fill: #eeeeee;
+}
+
 .button {
     -fx-border-color: silver;
     -fx-border-width: 4px;

@@ -16,6 +16,11 @@ public class DungeonGeneratorCellular implements DungeonGenerator {
     }
 
     @Override
+    public void setSeed(long seed) {
+        rand.setSeed(seed);
+    }
+
+    @Override
     public DungeonData generate(int width, int height, int level) {
         DungeonData data = new DungeonData(width, height);
 
