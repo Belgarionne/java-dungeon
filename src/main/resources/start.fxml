@@ -40,24 +40,34 @@
       <left>
          <VBox id="highscore-vbox" prefWidth="200.0" BorderPane.alignment="CENTER">
             <padding>
-               <Insets bottom="16.0" left="16.0" right="16.0" top="16.0"/>
+               <Insets bottom="16.0" left="16.0" right="16.0" top="16.0" />
             </padding>
             <Label text="Highscores">
                <font>
-                  <Font name="Algerian" size="24.0"/>
+                  <Font name="Algerian" size="24.0" />
                </font>
             </Label>
             <Label fx:id="dungeonLvlHigh" text="Highest Floor: 100">
                <font>
-                  <Font size="14.0"/>
+                  <Font size="14.0" />
                </font>
             </Label>
             <Label fx:id="playerLvlHigh" text="Highest Player Level: 100">
                <font>
-                  <Font size="14.0"/>
+                  <Font size="14.0" />
                </font>
             </Label>
          </VBox>
       </left>
+      <right>
+         <Label text="Instructions:&#10;WASD/Arrow keys to move.&#10;F to pickup items and go down stairs.&#10;Move into enemies to attack them.&#10;Left-click on equipment in the inventory to equip them.&#10;Right-click on items in the inventory to drop them.&#10;&#10;Fight enemies and make your way to the highest floor you can!&#10;Good Luck! (You'll need it)" textAlignment="CENTER" BorderPane.alignment="CENTER">
+            <font>
+               <Font size="14.0" />
+            </font>
+            <BorderPane.margin>
+               <Insets right="8.0" />
+            </BorderPane.margin>
+         </Label>
+      </right>
    </BorderPane>
 </StackPane>
