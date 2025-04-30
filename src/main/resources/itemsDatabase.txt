@@ -2,4 +2,10 @@ EQUIPMENT
 id:armor_1|name:Plate Armor|sprite:Armor|slot:ARMOR|dmg:0|def:1
 
 EQUIPMENT
+id:armor_1|name:Thorn Armor|sprite:Armor|slot:ARMOR|dmg:0.5|def:0.5
+
+EQUIPMENT
 id:weapon_1|name:Longsword|sprite:Weapon|slot:WEAPON|dmg:1|def:0
+
+EQUIPMENT
+id:weapon_1|name:Fencing Rapier|sprite:Weapon|slot:WEAPON|dmg:0.5|def:0.5

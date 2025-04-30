@@ -1,2 +1,2 @@
 HIGHSCORE
-floor:0|playerLvl:1
+floor:1|playerLvl:4
